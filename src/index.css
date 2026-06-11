@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:      #000000;
+  --white:      #FFFFFF;
+  --grey-heavy: #2a2a2a;
+  --grey-mid:   #6e6e6e;
+  --grey-light: #b0b0b0;
+  --grey-rule:  #d8d8d8;
+  --grey-bg:    #f4f3f1;
+  --signal:     #e8320a;
+
+  --font-sign: 'Barlow Condensed', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-body: 'Barlow', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--grey-bg);
+  font-family: var(--font-body);
+  color: var(--black);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* ── Print: only show digest pages ─────────────────────────────────── */
+@media print {
+  /* Hide everything by default */
+  body > * { display: none !important; }
+  #root > * { display: none !important; }
+
+  /* Show only the digest pages wrapper */
+  .digest-print-root { display: flex !important; }
+
+  /* Reset layout */
+  nav, .sidebar, .digest-nav, .no-print { display: none !important; }
+  main { margin-left: 0 !important; }
+
+  body { background: white !important; margin: 0 !important; padding: 0 !important; }
+
+  /* Each page breaks cleanly */
+  .digest-print-page { page-break-after: always; break-after: page; }
+  .digest-print-page:last-child { page-break-after: avoid; break-after: avoid; }
+}
