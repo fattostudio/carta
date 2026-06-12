@@ -1,45 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell, Btn, Row } from '../components/ui';
-import { getDigests, saveDigests, subscribe, getDisabledSources } from '../store';
-import { buildDigest } from '../api';
+import { PageShell, Btn } from '../components/ui';
+import { getDigests, subscribe } from '../store';
+import { incrementalFetch } from '../hooks/useFetch';
 
 export default function Digests() {
   const [digests, setDigests] = useState(getDigests);
   const [selected, setSelected] = useState(() => getDigests()[0]?.id || null);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Keep in sync with store updates from other pages
   useEffect(() => subscribe(e => {
     if (e.detail.key === 'digests') {
       const d = getDigests();
       setDigests(d);
-      if (!selected && d.length) setSelected(d[0].id);
+      if (d.length && !selected) setSelected(d[0].id);
     }
   }), []);
 
   async function handleFetch() {
     setLoading(true);
     setError(null);
+    setStatus(null);
     try {
-      const result = await buildDigest({ days: 7, max: 10, label: 'Carta' });
-      if (!result.newsletters?.length) { setError('No newsletters found.'); return; }
-
-      // Filter out disabled sources
-      const disabled = getDisabledSources();
-      const filtered = disabled.length
-        ? result.newsletters.filter(nl => !disabled.includes(nl.senderEmail))
-        : result.newsletters;
-
-      const week = `Week of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
-      const existing = digests.find(d => d.week === week);
-      const digest = { id: existing?.id || Date.now(), week, builtAt: result.builtAt, newsletters: filtered };
-      const updated = existing ? digests.map(d => d.id === existing.id ? digest : d) : [digest, ...digests];
-      saveDigests(updated);
-      setDigests(updated);
-      setSelected(digest.id);
+      const { added } = await incrementalFetch({ label: 'Carta' });
+      const d = getDigests();
+      setDigests(d);
+      if (d.length) setSelected(d[0].id);
+      setStatus(added > 0 ? `${added} new newsletter${added !== 1 ? 's' : ''} added` : 'Already up to date');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,12 +42,17 @@ export default function Digests() {
   return (
     <PageShell
       title="Digests"
-      sub="All generated digests"
+      sub="Weekly reading digests, updated daily"
       actions={<Btn primary onClick={handleFetch} loading={loading ? 'Fetching...' : undefined}>Fetch now</Btn>}
     >
-      {error && (
-        <div style={{ padding: '10px 16px', background: '#fff2f0', borderBottom: '1px solid var(--grey-rule)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--signal)', letterSpacing: '0.06em' }}>
-          {error}
+      {(error || status) && (
+        <div style={{
+          padding: '10px 16px', borderBottom: '1px solid var(--grey-rule)',
+          fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em',
+          color: error ? 'var(--signal)' : '#2a9a5a',
+          background: error ? '#fff2f0' : '#f0faf4',
+        }}>
+          {error || status}
         </div>
       )}
 
@@ -68,14 +63,7 @@ export default function Digests() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 'calc(100vh - 57px)' }}>
-
-          {/* Left panel */}
           <div style={{ borderRight: '2px solid var(--black)', overflowY: 'auto' }}>
-            {loading && (
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--grey-rule)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.08em' }}>
-                Fetching...
-              </div>
-            )}
             {digests.map(d => {
               const isActive = d.id === selected;
               const date = new Date(d.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -84,27 +72,24 @@ export default function Digests() {
                   padding: '12px 16px', borderBottom: '1px solid var(--grey-rule)',
                   cursor: 'pointer', background: isActive ? 'var(--black)' : 'var(--white)', transition: 'background 0.1s',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span style={{ fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: isActive ? 'var(--white)' : 'var(--black)' }}>
-                      {d.week}
-                    </span>
+                  <div style={{ fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: isActive ? 'var(--white)' : 'var(--black)', marginBottom: 3 }}>
+                    {d.week}
                   </div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isActive ? 'var(--grey-light)' : 'var(--grey-mid)', letterSpacing: '0.04em' }}>
-                    {d.newsletters.length} issues · {date}
+                    {d.newsletters.length} issues · updated {date}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Right panel */}
           {active && (
             <div style={{ overflowY: 'auto' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{active.week}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', marginTop: 3, letterSpacing: '0.06em' }}>
-                    {active.newsletters.length} newsletters · {new Date(active.builtAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {active.newsletters.length} newsletters · updated {new Date(active.builtAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>

@@ -85,3 +85,32 @@ export function subscribe(fn) {
   window.addEventListener('carta:update', fn);
   return () => window.removeEventListener('carta:update', fn);
 }
+
+// ── Week utilities ─────────────────────────────────────────────────────────────
+export function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() + 1 - day);
+  const year = d.getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+  const weekNum = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+  return `${year}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+export function weekLabel(weekKey) {
+  const [year, w] = weekKey.split('-W');
+  const weekNum = parseInt(w);
+  const jan1 = new Date(parseInt(year), 0, 1);
+  const monday = new Date(jan1);
+  monday.setDate(jan1.getDate() + (weekNum - 1) * 7 - (jan1.getDay() || 7) + 1);
+  return `Week of ${monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+}
+
+export function getLastFetch() {
+  return localStorage.getItem('carta-last-fetch') || null;
+}
+
+export function saveLastFetch(isoDate) {
+  localStorage.setItem('carta-last-fetch', isoDate);
+  dispatch('lastFetch');
+}
