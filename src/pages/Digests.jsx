@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageShell, Btn } from '../components/ui';
 import { getDigests, subscribe } from '../store';
 import { incrementalFetch } from '../hooks/useFetch';
+import { useMobile } from '../hooks/useMobile';
 
 export default function Digests() {
   const [digests, setDigests] = useState(getDigests);
@@ -10,7 +11,10 @@ export default function Digests() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
+  // On mobile, track whether we're viewing a digest (detail) or the list
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'detail'
   const navigate = useNavigate();
+  const isMobile = useMobile();
 
   useEffect(() => subscribe(e => {
     if (e.detail.key === 'digests') {
@@ -37,7 +41,16 @@ export default function Digests() {
     }
   }
 
+  function openDigest(id) {
+    setSelected(id);
+    if (isMobile) setMobileView('detail');
+  }
+
   const active = digests.find(d => d.id === selected);
+
+  // On mobile, show either the list OR the detail, not both
+  const showList = !isMobile || mobileView === 'list';
+  const showDetail = !isMobile || mobileView === 'detail';
 
   return (
     <PageShell
@@ -62,37 +75,62 @@ export default function Digests() {
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-light)', letterSpacing: '0.08em' }}>Hit "Fetch now" to pull from your Carta label</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 'calc(100vh - 57px)' }}>
-          <div style={{ borderRight: '2px solid var(--black)', overflowY: 'auto' }}>
-            {digests.map(d => {
-              const isActive = d.id === selected;
-              const date = new Date(d.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              return (
-                <div key={d.id} onClick={() => setSelected(d.id)} style={{
-                  padding: '12px 16px', borderBottom: '1px solid var(--grey-rule)',
-                  cursor: 'pointer', background: isActive ? 'var(--black)' : 'var(--white)', transition: 'background 0.1s',
-                }}>
-                  <div style={{ fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: isActive ? 'var(--white)' : 'var(--black)', marginBottom: 3 }}>
-                    {d.week}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '220px 1fr',
+          minHeight: 'calc(100vh - 57px)',
+        }}>
+          {/* List */}
+          {showList && (
+            <div style={{ borderRight: isMobile ? 'none' : '2px solid var(--black)', overflowY: 'auto' }}>
+              {digests.map(d => {
+                const isActive = d.id === selected && !isMobile;
+                const date = new Date(d.builtAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return (
+                  <div key={d.id} onClick={() => openDigest(d.id)} style={{
+                    padding: '14px 16px', borderBottom: '1px solid var(--grey-rule)',
+                    cursor: 'pointer', background: isActive ? 'var(--black)' : 'var(--white)', transition: 'background 0.1s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: isActive ? 'var(--white)' : 'var(--black)', marginBottom: 3 }}>
+                        {d.week}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isActive ? 'var(--grey-light)' : 'var(--grey-mid)', letterSpacing: '0.04em' }}>
+                        {d.newsletters.length} issues · updated {date}
+                      </div>
+                    </div>
+                    {isMobile && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--grey-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    )}
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isActive ? 'var(--grey-light)' : 'var(--grey-mid)', letterSpacing: '0.04em' }}>
-                    {d.newsletters.length} issues · updated {date}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
-          {active && (
+          {/* Detail */}
+          {showDetail && active && (
             <div style={{ overflowY: 'auto' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{active.week}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', marginTop: 3, letterSpacing: '0.06em' }}>
-                    {active.newsletters.length} newsletters · updated {new Date(active.builtAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  {isMobile && (
+                    <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.week}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', marginTop: 3, letterSpacing: '0.06em' }}>
+                      {active.newsletters.length} newsletters
+                    </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <Btn onClick={() => navigate(`/digests/${active.id}`)}>View</Btn>
                   <Btn primary onClick={() => navigate(`/digests/${active.id}?print=1`)}>Print</Btn>
                 </div>

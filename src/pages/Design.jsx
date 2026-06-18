@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PageShell, Section, ToggleRow, Btn, FieldLabel, Select } from '../components/ui';
 import { getDesign, saveDesign, getTemplate, saveTemplate } from '../store';
+import { useMobile } from '../hooks/useMobile';
 
 const FONTS = ['Helvetica Neue', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Garamond'];
 const LAYOUTS = ['One article per page', 'Two column', 'Newspaper grid', 'Full bleed'];
@@ -26,6 +27,7 @@ const TEMPLATES = [
 export default function Design() {
   const [template, setTemplate] = useState(getTemplate);
   const [design, setDesign] = useState(getDesign);
+  const isMobile = useMobile();
 
   function update(key, value) {
     setDesign(d => ({ ...d, [key]: value }));
@@ -36,7 +38,6 @@ export default function Design() {
     saveDesign(design);
   }
 
-  // When a template is selected, snap design values to its defaults
   function selectTemplate(id) {
     setTemplate(id);
     if (id === 'eco') {
@@ -46,6 +47,9 @@ export default function Design() {
     }
   }
 
+  const twoCol = isMobile ? '1fr' : '1fr 1fr';
+  const threeCol = isMobile ? '1fr' : '1fr 1fr 1fr';
+
   return (
     <PageShell
       title="Design"
@@ -54,7 +58,7 @@ export default function Design() {
     >
       {/* Templates */}
       <Section label="Templates">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 12 }}>
           {TEMPLATES.map(tmpl => {
             const isActive = template === tmpl.id;
             const p = tmpl.preview;
@@ -64,7 +68,6 @@ export default function Design() {
                 cursor: 'pointer', transition: 'border 0.1s',
                 background: isActive ? 'var(--grey-bg)' : 'var(--white)',
               }}>
-                {/* Mini preview */}
                 <div style={{ borderBottom: isActive ? '2px solid var(--black)' : '1px solid var(--grey-rule)', padding: 12 }}>
                   <div style={{ background: p.headerBg, color: p.headerFg, padding: '5px 8px', marginBottom: 8, fontFamily: 'var(--font-sign)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', border: p.border }}>
                     The Weekend Digest
@@ -97,7 +100,7 @@ export default function Design() {
 
       {/* Colour */}
       <Section label="Colour">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: threeCol, gap: 12 }}>
           {[
             { label: 'Paper', key: 'paper' },
             { label: 'Ink', key: 'ink' },
@@ -117,7 +120,7 @@ export default function Design() {
 
       {/* Typography */}
       <Section label="Typography">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 16 }}>
           <div>
             <FieldLabel>Display font</FieldLabel>
             <Select value={design.displayFont} onChange={e => update('displayFont', e.target.value)}>
@@ -141,7 +144,7 @@ export default function Design() {
 
       {/* Layout */}
       <Section label="Layout">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 8 }}>
           {LAYOUTS.map(l => (
             <div key={l} onClick={() => update('layout', l)} style={{
               padding: '10px 12px',
@@ -161,7 +164,7 @@ export default function Design() {
 
       {/* Output */}
       <Section label="Output">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 12, marginBottom: 14 }}>
           <div>
             <FieldLabel>Paper size</FieldLabel>
             <Select value={design.paperSize} onChange={e => update('paperSize', e.target.value)}>
@@ -180,7 +183,7 @@ export default function Design() {
         <ToggleRow label="Page numbers" on={design.pageNums} onChange={v => update('pageNums', v)} last />
       </Section>
 
-      {/* Live preview — reflects current settings */}
+      {/* Live preview */}
       <Section label="Preview">
         <div style={{ background: design.paper, border: '1px solid var(--grey-rule)', padding: 24, minHeight: 180 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: design.accent, marginBottom: 10 }}>
