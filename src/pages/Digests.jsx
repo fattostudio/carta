@@ -7,14 +7,23 @@ import { useMobile } from '../hooks/useMobile';
 
 export default function Digests() {
   const [digests, setDigests] = useState(getDigests);
-  const [selected, setSelected] = useState(() => getDigests()[0]?.id || null);
+  const [selected, setSelected] = useState(() => {
+    const saved = sessionStorage.getItem('carta-selected-digest');
+    if (saved && getDigests().some(d => String(d.id) === saved)) return JSON.parse(saved);
+    return getDigests()[0]?.id || null;
+  });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
-  // On mobile, track whether we're viewing a digest (detail) or the list
-  const [mobileView, setMobileView] = useState('list'); // 'list' | 'detail'
+  // On mobile, track whether we're viewing a digest (detail) or the list.
+  // Persist so returning from the reader (View) restores the detail view.
+  const [mobileView, setMobileView] = useState(() => sessionStorage.getItem('carta-mobile-view') || 'list');
   const navigate = useNavigate();
   const isMobile = useMobile();
+
+  useEffect(() => {
+    sessionStorage.setItem('carta-mobile-view', mobileView);
+  }, [mobileView]);
 
   useEffect(() => subscribe(e => {
     if (e.detail.key === 'digests') {
@@ -43,6 +52,7 @@ export default function Digests() {
 
   function openDigest(id) {
     setSelected(id);
+    sessionStorage.setItem('carta-selected-digest', JSON.stringify(id));
     if (isMobile) setMobileView('detail');
   }
 

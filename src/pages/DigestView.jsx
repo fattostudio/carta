@@ -214,6 +214,76 @@ function PrintPortal({ digest, t }) {
   );
 }
 
+// ── Mobile reader — reflows content full-width, readable type ────────────────
+function MobileReader({ digest, t }) {
+  const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  return (
+    <div style={{ background: '#fff' }}>
+      {/* Cover */}
+      <div style={{ padding: '28px 20px 24px', borderBottom: '2px solid #000' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#888', marginBottom: 16 }}>
+          {date}
+        </div>
+        <div style={{ fontFamily: 'var(--font-sign)', fontSize: 44, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.92, color: '#000', marginBottom: 20 }}>
+          The Weekend Digest
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          {digest.newsletters.length} issues · Carta label
+        </div>
+      </div>
+
+      {/* Contents */}
+      <div style={{ padding: '16px 20px', borderBottom: '2px solid #000' }}>
+        <div style={{ fontFamily: 'var(--font-sign)', fontSize: 12, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
+          Contents
+        </div>
+        {digest.newsletters.map((nl, i) => (
+          <a key={nl.id || i} href={`#article-${i}`} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: '1px solid #eee', textDecoration: 'none', alignItems: 'baseline' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', minWidth: 18 }}>{String(i + 1).padStart(2, '0')}</span>
+            <span style={{ fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em', lineHeight: 1.2, color: '#000' }}>{nl.subject}</span>
+          </a>
+        ))}
+      </div>
+
+      {/* Articles */}
+      {digest.newsletters.map((nl, i) => {
+        const paras = getParas(nl.bodyText);
+        const wc = paras.join(' ').split(/\s+/).length;
+        const rt = Math.max(1, Math.round(wc / 200));
+        const aDate = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+        const source = domainFromEmail(nl.senderEmail);
+        return (
+          <article id={`article-${i}`} key={nl.id || i} style={{ padding: '24px 20px', borderBottom: '1px solid #ddd' }}>
+            <div style={{ marginBottom: 12 }}>
+              <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', border: '1px solid #000', padding: '2px 8px' }}>
+                {nl.sender}
+              </span>
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-sign)', fontSize: 28, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.98, color: '#000', margin: '0 0 12px', borderTop: '3px solid #000', paddingTop: 12 }}>
+              {nl.subject}
+            </h2>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: 9, color: '#888', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: 16, marginBottom: 16, borderBottom: '1px solid #eee' }}>
+              <span>{aDate}</span><span>·</span><span>{rt} min read</span>
+              {source && <><span>·</span><span>{source}</span></>}
+            </div>
+            {paras.map((p, j) => (
+              <p key={j} style={{ fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.7, color: '#1a1a1a', marginBottom: 16, fontWeight: j === 0 ? 500 : 400 }}>
+                {p}
+              </p>
+            ))}
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em', marginTop: 8 }}>
+              {wc.toLocaleString()} words
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── View ──────────────────────────────────────────────────────────────────────
 export default function DigestView() {
   const { id } = useParams();
@@ -239,10 +309,6 @@ export default function DigestView() {
     </div>
   );
 
-  // On mobile, scale the A4 pages down to fit the viewport width.
-  // 210mm ≈ 794px. Scale factor brings it within the screen.
-  const pageScale = isMobile ? (window.innerWidth - 24) / 794 : 1;
-
   return (
     <>
       <style>{`
@@ -261,7 +327,7 @@ export default function DigestView() {
 
       {/* Screen nav */}
       <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--white)', borderBottom: '2px solid var(--black)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={() => navigate('/digests')} style={{ fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', background: 'none', border: 'none', color: 'var(--grey-mid)', cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={() => navigate(-1)} style={{ fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', background: 'none', border: 'none', color: 'var(--grey-mid)', cursor: 'pointer', flexShrink: 0 }}>
           ← Back
         </button>
         <div style={{ flex: 1, fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -275,21 +341,17 @@ export default function DigestView() {
         <Btn primary onClick={() => window.print()}>Print</Btn>
       </div>
 
-      {/* Screen view — pages scaled on mobile */}
-      <div className="digest-screen-wrap" style={{ background: 'var(--grey-bg)', padding: isMobile ? '16px 12px' : '32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden' }}>
-        <div style={{
-          transform: isMobile ? `scale(${pageScale})` : 'none',
-          transformOrigin: 'top center',
-          width: isMobile ? '794px' : 'auto',
-          // collapse the empty space the scale transform leaves behind
-          height: isMobile ? 'auto' : 'auto',
-        }}>
+      {/* Screen view */}
+      {isMobile ? (
+        <MobileReader digest={digest} t={t} />
+      ) : (
+        <div className="digest-screen-wrap" style={{ background: 'var(--grey-bg)', padding: '32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden' }}>
           <CoverPage digest={digest} t={t} />
           {digest.newsletters.map((nl, i) => (
             <ArticlePage key={nl.id} nl={nl} index={i} total={digest.newsletters.length} t={t} />
           ))}
         </div>
-      </div>
+      )}
 
       <PrintPortal digest={digest} t={t} />
     </>
