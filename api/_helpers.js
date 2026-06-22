@@ -3,14 +3,19 @@ import { google } from 'googleapis';
 
 const SECRET = process.env.SESSION_SECRET;
 
+// Public-facing base URL. PUBLIC_BASE_URL (e.g. https://fatto.studio) wins so
+// OAuth redirects and cookies resolve on the real domain, not the Vercel URL.
+export function getPublicBase() {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  return 'http://localhost:3000';
+}
+
 export function getOAuthClient() {
-  const base = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:3000';
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${base}/api/auth/callback`
+    `${getPublicBase()}/carta/api/auth/callback`
   );
 }
 
@@ -33,7 +38,7 @@ export function verifyToken(req) {
 }
 
 export function setCookie(res, token) {
-  const secure = process.env.VERCEL_PROJECT_PRODUCTION_URL ? '; Secure' : '';
+  const secure = process.env.PUBLIC_BASE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? '; Secure' : '';
   res.setHeader('Set-Cookie', `carta_auth=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${secure}`);
 }
 
@@ -62,9 +67,7 @@ export function decodeBody(payload) {
 }
 
 export function setCors(res) {
-  const origin = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : 'http://localhost:5173';
+  const origin = getPublicBase();
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');

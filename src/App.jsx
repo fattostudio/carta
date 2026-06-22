@@ -30,7 +30,7 @@ export default function App() {
   if (!auth) return <Login />;
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/carta">
       <div style={{ display: 'flex' }}>
         {!isMobile && <Sidebar />}
         <main style={{
