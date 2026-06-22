@@ -1,4 +1,4 @@
-const BASE = '/carta/api';
+const BASE = '/api';
 
 export async function getAuthStatus() {
   const res = await fetch(`${BASE}/auth/status`, { credentials: 'include' });

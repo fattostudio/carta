@@ -3,8 +3,8 @@ import { google } from 'googleapis';
 
 const SECRET = process.env.SESSION_SECRET;
 
-// Public-facing base URL. PUBLIC_BASE_URL (e.g. https://fatto.studio) wins so
-// OAuth redirects and cookies resolve on the real domain, not the Vercel URL.
+// Public-facing base URL. PUBLIC_BASE_URL (e.g. https://carta.fatto.studio) wins
+// so OAuth redirects and cookies resolve on the real domain, not the Vercel URL.
 export function getPublicBase() {
   if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
@@ -15,7 +15,7 @@ export function getOAuthClient() {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${getPublicBase()}/carta/api/auth/callback`
+    `${getPublicBase()}/api/auth/callback`
   );
 }
 

@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     const client = getOAuthClient();
     const { tokens } = await client.getToken(code);
     setCookie(res, signToken(tokens));
-    res.redirect(`${getPublicBase()}/carta/digests`);
+    res.redirect(`${getPublicBase()}/digests`);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
