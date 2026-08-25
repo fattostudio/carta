@@ -199,7 +199,7 @@ function ZineCover({ digest, t }) {
   const isEco = t === TEMPLATES.eco;
 
   return (
-    <div style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: 'page', pageBreakAfter: 'always' }}>
+    <div className="zine-cover" style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: 'page', pageBreakAfter: 'always' }}>
       {/* Left: headline */}
       <div style={{ width: '148.5mm', flexShrink: 0, background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : t.coverFg, display: 'flex', flexDirection: 'column', padding: '28px', borderRight: isEco ? '1px solid #ccc' : 'none' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.5)', marginBottom: 'auto' }}>
@@ -252,13 +252,11 @@ function ZineArticle({ nl, index, total, t }) {
 
   return (
     <div style={{
-      width: '297mm', boxSizing: 'border-box',
       breakBefore: 'page', pageBreakBefore: 'always',
-      columns: 2, columnGap: '14mm',
+      columns: 4, columnGap: '8mm',
       columnRule: `1px solid ${t.ruleColor}`,
-      padding: '14mm',
     }}>
-      {/* Header spans both columns */}
+      {/* Header spans all 4 columns */}
       <div style={{ columnSpan: 'all', breakInside: 'avoid', marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${t.ruleColor}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '2px 7px', color: t.tagFg }}>
@@ -278,14 +276,14 @@ function ZineArticle({ nl, index, total, t }) {
         </div>
       </div>
 
-      {/* Lead spans both columns */}
+      {/* Lead spans all 4 columns */}
       {lead && (
         <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 12, lineHeight: 1.75, fontWeight: 500, color: t.bodyFg, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${t.ruleColor}` }}>
           {lead}
         </p>
       )}
 
-      {/* Body flows in 2 columns */}
+      {/* Body flows in 4 columns (2 per A5 half) */}
       {body.map((p, i) => (
         <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.8, color: t.bodyFg, marginBottom: 10, breakInside: 'avoid' }}>
           {p}
@@ -421,7 +419,10 @@ export default function DigestView() {
           font-family: 'Ecofont Vera Sans';
           src: url('https://fonts.cdnfonts.com/css/ecofont-vera-sans') format('truetype');
         }
-        @page { size: 297mm 210mm; margin: 0; }
+        /* Cover gets zero margin (full bleed); all other pages get safe margins */
+        @page { size: 297mm 210mm; margin: 12mm 14mm; }
+        @page cover-page { size: 297mm 210mm; margin: 0; }
+        .zine-cover { page: cover-page; }
         #carta-zine-container { display: none; }
         @media print {
           body > #root { display: none !important; }
