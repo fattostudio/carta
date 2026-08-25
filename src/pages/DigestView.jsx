@@ -83,11 +83,20 @@ const TEMPLATES = {
 };
 
 // ── Design helpers ────────────────────────────────────────────────────────────
-const PAGE_NAMES = { 'A4': 'A4', 'Letter': 'letter', 'A5': 'A5', 'Tabloid': 'ledger' };
+// Explicit mm dimensions rather than named size + orientation keyword —
+// browsers are unreliable about honoring "size: A4 landscape" but always
+// respect literal "size: <w>mm <h>mm".
+const PAPER_DIMENSIONS_MM = {
+  A4: [210, 297],
+  Letter: [215.9, 279.4],
+  A5: [148.5, 210],
+  Tabloid: [279.4, 431.8],
+};
 
 function getPaperSize(paperSize, orientation) {
-  const name = PAGE_NAMES[paperSize] || 'A4';
-  return `${name} ${orientation === 'Landscape' ? 'landscape' : 'portrait'}`;
+  const [w, h] = PAPER_DIMENSIONS_MM[paperSize] || PAPER_DIMENSIONS_MM.A4;
+  const [width, height] = orientation === 'Landscape' ? [h, w] : [w, h];
+  return `${width}mm ${height}mm`;
 }
 
 function mergeDesign(baseT, design) {
