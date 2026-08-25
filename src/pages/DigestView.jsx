@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
@@ -340,37 +340,117 @@ function PortraitPortal({ digest, t, design }) {
   );
 }
 
-// ── Zine pagination ───────────────────────────────────────────────────────────
-// A5 panel (148.5×210mm), 8mm padding, 2 cols at 9.5px/1.55lh.
-// Capacity ~430w (first, with header) and ~530w (continuation).
-const ZINE_FIRST_WORDS = 380;
-const ZINE_CONT_WORDS  = 480;
+// ── Zine pagination via DOM measurement ──────────────────────────────────────
+// Renders all remaining paragraphs into a hidden panel replica with real CSS
+// 2-column layout, then uses getBoundingClientRect to detect which paragraphs
+// are fully visible vs clipped by overflow:hidden.
+function measureZinePanels(digest, t) {
+  const isEco = t === TEMPLATES.eco;
+  const panel = document.createElement('div');
+  panel.style.cssText = 'position:absolute;left:-9999px;width:148.5mm;height:210mm;padding:8mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
+  document.body.appendChild(panel);
+  const results = [];
 
-function paginateArticle(nl) {
-  const paras  = getParas(nl.bodyText);
-  const lead   = paras[0] || '';
-  const body   = paras.slice(1);
-  const pages  = [];
+  for (const [ai, nl] of digest.newsletters.entries()) {
+    const paras = getParas(nl.bodyText);
+    const lead = paras[0] || '';
+    const body = paras.slice(1);
+    const wc = paras.join(' ').split(/\s+/).length;
+    const rt = Math.max(1, Math.round(wc / 200));
+    const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    let rem = body.slice();
+    let first = true;
 
-  let firstBody = [], fw = lead.split(/\s+/).length;
-  for (const p of body) {
-    const w = p.split(/\s+/).length;
-    if (fw + w > ZINE_FIRST_WORDS && firstBody.length > 0) break;
-    firstBody.push(p); fw += w;
+    do {
+      panel.innerHTML = '';
+
+      const hd = document.createElement('div');
+      if (first) {
+        hd.style.cssText = 'flex-shrink:0;margin-bottom:5px';
+        const mkLabel = (text) => {
+          const s = document.createElement('span');
+          s.style.cssText = `font-family:var(--font-mono);font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;color:${t.metaFg}`;
+          s.textContent = text;
+          return s;
+        };
+        const rh = document.createElement('div');
+        rh.style.cssText = `display:flex;justify-content:space-between;padding-bottom:3px;margin-bottom:4px;border-bottom:.5pt solid ${t.ruleColor}`;
+        rh.append(mkLabel('Carta'), mkLabel(`${String(ai + 1).padStart(2, '0')}/${String(digest.newsletters.length).padStart(2, '0')}`));
+        hd.appendChild(rh);
+        const tw = document.createElement('div');
+        tw.style.marginBottom = '4px';
+        const tag = document.createElement('span');
+        tag.style.cssText = `font-family:var(--font-mono);font-size:6.5px;border:.5pt solid ${t.tagBorder};padding:1px 5px;text-transform:uppercase;letter-spacing:.1em;color:${t.tagFg}`;
+        tag.textContent = nl.sender;
+        tw.appendChild(tag);
+        hd.appendChild(tw);
+        const h2 = document.createElement('h2');
+        h2.style.cssText = `font-family:${t.headlineFamily};font-size:17px;font-weight:800;letter-spacing:-.01em;text-transform:uppercase;line-height:.95;color:${t.headlineFg};margin:0;border-top:${isEco ? '.5pt solid #ccc' : '2pt solid #000'};padding-top:5px;margin-bottom:5px`;
+        h2.textContent = nl.subject;
+        hd.appendChild(h2);
+        const md = document.createElement('div');
+        md.style.cssText = `font-family:var(--font-mono);font-size:6.5px;color:${t.metaFg};letter-spacing:.08em;text-transform:uppercase;padding-bottom:5px;margin-bottom:5px;border-bottom:.5pt solid ${t.ruleColor}`;
+        md.textContent = `${date}${rt ? ` · ${rt} min` : ''}`;
+        hd.appendChild(md);
+      } else {
+        hd.style.cssText = `flex-shrink:0;display:flex;justify-content:space-between;padding-bottom:3px;margin-bottom:5px;border-bottom:.5pt solid ${t.ruleColor}`;
+        const s1 = document.createElement('span');
+        s1.style.cssText = `font-family:var(--font-mono);font-size:6.5px;color:${t.metaFg};letter-spacing:.1em;text-transform:uppercase`;
+        s1.textContent = nl.sender;
+        hd.appendChild(s1);
+        const s2 = document.createElement('span');
+        s2.style.cssText = 'font-family:var(--font-mono);font-size:6.5px;color:#ccc';
+        s2.textContent = '—';
+        hd.appendChild(s2);
+      }
+      panel.appendChild(hd);
+
+      const bd = document.createElement('div');
+      bd.style.cssText = `flex:1;overflow:hidden;columns:2;column-fill:auto;column-gap:4mm;column-rule:.5pt solid ${t.ruleColor}`;
+      panel.appendChild(bd);
+
+      const ft = document.createElement('div');
+      ft.style.cssText = `flex-shrink:0;border-top:.5pt solid ${t.ruleColor};padding-top:3px;margin-top:3px;text-align:center;font-family:var(--font-mono);font-size:6px;color:#ccc`;
+      ft.textContent = '·';
+      panel.appendChild(ft);
+
+      if (lead && first) {
+        const lp = document.createElement('p');
+        lp.style.cssText = `column-span:all;font-family:${t.fontFamily};font-size:10px;line-height:1.55;font-weight:500;color:${t.bodyFg};margin:0 0 5px;padding:0 0 5px;border-bottom:.5pt solid ${t.ruleColor}`;
+        lp.textContent = lead;
+        bd.appendChild(lp);
+      }
+
+      // Render ALL remaining paragraphs into the 2-column body
+      const paraEls = [];
+      for (const text of rem) {
+        const p = document.createElement('p');
+        p.style.cssText = `font-family:${t.fontFamily};font-size:9.5px;line-height:1.55;color:${t.bodyFg};margin:0 0 4px;break-inside:avoid`;
+        p.textContent = text;
+        bd.appendChild(p);
+        paraEls.push(p);
+      }
+
+      // Detect which paragraphs fit: multi-column overflow is horizontal
+      // (content flows into virtual columns 3, 4, … to the right), so check
+      // both vertical AND horizontal bounds.
+      const bdRect = bd.getBoundingClientRect();
+      let fit = 0;
+      for (let i = 0; i < paraEls.length; i++) {
+        const r = paraEls[i].getBoundingClientRect();
+        if (r.bottom > bdRect.bottom + 1 || r.right > bdRect.right + 1) break;
+        fit = i + 1;
+      }
+      if (fit === 0 && rem.length > 0) fit = 1;
+
+      results.push({ nl, ai, lead: first ? lead : null, body: rem.slice(0, fit), isFirst: first });
+      rem = rem.slice(fit);
+      first = false;
+    } while (rem.length > 0);
   }
-  pages.push({ lead, body: firstBody, isFirst: true });
 
-  let chunk = [], cw = 0;
-  for (const p of body.slice(firstBody.length)) {
-    const w = p.split(/\s+/).length;
-    if (cw + w > ZINE_CONT_WORDS && chunk.length > 0) {
-      pages.push({ lead: null, body: chunk, isFirst: false });
-      chunk = [p]; cw = w;
-    } else { chunk.push(p); cw += w; }
-  }
-  if (chunk.length > 0) pages.push({ lead: null, body: chunk, isFirst: false });
-
-  return pages;
+  panel.remove();
+  return results;
 }
 
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
@@ -445,7 +525,7 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
         </div>
       )}
 
-      <div style={{ flex: 1, overflow: 'hidden', columns: 2, columnGap: '4mm', columnRule: `0.5pt solid ${t.ruleColor}` }}>
+      <div style={{ flex: 1, overflow: 'hidden', columns: 2, columnFill: 'auto', columnGap: '4mm', columnRule: `0.5pt solid ${t.ruleColor}` }}>
         {lead && isFirst && (
           <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.55, fontWeight: 500, color: t.bodyFg, marginBottom: 5, paddingBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
             {lead}
@@ -479,6 +559,8 @@ function ZinePanelBlank({ pageNum }) {
 //    Print double-sided, flip on short edge, fold, staple.
 function ZinePortal({ digest, t }) {
   const containerRef = useRef(null);
+  const [panelData, setPanelData] = useState(null);
+
   if (!containerRef.current) {
     let el = document.getElementById('carta-zine-container');
     if (!el) {
@@ -489,25 +571,30 @@ function ZinePortal({ digest, t }) {
     containerRef.current = el;
   }
 
-  // Build reading-order panel list
-  // Page 1 = front cover, page 2 = inside front cover (blank)
+  useEffect(() => {
+    document.fonts.ready.then(() => {
+      setPanelData(measureZinePanels(digest, t));
+    });
+  }, [digest, t]);
+
+  if (!panelData) return createPortal(<div />, containerRef.current);
+
   const panels = [
     <ZinePanelCover key="cover" digest={digest} t={t} />,
     <ZinePanelBlank key="ifc" pageNum="" />,
   ];
-  digest.newsletters.forEach((nl, ai) => {
-    paginateArticle(nl).forEach((pg, pi) => {
-      const pageNum = panels.length + 1;
-      panels.push(
-        <ZinePanelArticle key={`${ai}-${pi}`}
-          nl={nl} index={ai} total={digest.newsletters.length}
-          t={t} lead={pg.lead} body={pg.body} isFirst={pg.isFirst}
-          pageNum={pageNum} />
-      );
-    });
+  panelData.forEach((pg, i) => {
+    const pageNum = panels.length + 1;
+    panels.push(
+      <ZinePanelArticle key={`a${i}`}
+        nl={pg.nl} index={pg.ai} total={digest.newsletters.length}
+        t={t} lead={pg.lead} body={pg.body} isFirst={pg.isFirst}
+        pageNum={pageNum} />
+    );
   });
-  while (panels.length % 4 !== 0)
-    panels.push(<ZinePanelBlank key={`b${panels.length}`} pageNum={panels.length + 1} />);
+  do {
+    panels.push(<ZinePanelBlank key={`b${panels.length}`} pageNum="" />);
+  } while (panels.length % 4 !== 0);
 
   const N = panels.length;
   const sheets = [];
