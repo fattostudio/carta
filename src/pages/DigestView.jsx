@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
@@ -188,31 +188,6 @@ function ArticlePage({ nl, index, total, t }) {
         <span>{wc.toLocaleString()} words</span>
       </div>
     </div>
-  );
-}
-
-// ── Print Portal ────────────────────────────────────────────────────────────
-function PrintPortal({ digest, t }) {
-  const containerRef = useRef(null);
-  if (!containerRef.current) {
-    let el = document.getElementById('carta-print-container');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'carta-print-container';
-      document.body.appendChild(el);
-    }
-    containerRef.current = el;
-  }
-  return createPortal(
-    <div>
-      <div className="digest-print-page"><CoverPage digest={digest} t={t} /></div>
-      {digest.newsletters.map((nl, i) => (
-        <div key={nl.id || i} className="digest-print-page">
-          <ArticlePage nl={nl} index={i} total={digest.newsletters.length} t={t} />
-        </div>
-      ))}
-    </div>,
-    containerRef.current
   );
 }
 
@@ -421,7 +396,6 @@ export default function DigestView() {
   const isMobile = useMobile();
 
   const [searchParams] = useSearchParams();
-  const [printMode, setPrintMode] = useState('portrait');
   const digests = JSON.parse(localStorage.getItem('carta-digests') || '[]');
   const digest = digests.find(d => String(d.id) === id);
 
@@ -433,11 +407,6 @@ export default function DigestView() {
 
   const savedTemplate = localStorage.getItem('carta-template') || 'standard';
   const t = TEMPLATES[savedTemplate] || TEMPLATES.standard;
-
-  function handlePrint(mode) {
-    setPrintMode(mode);
-    setTimeout(() => window.print(), 150);
-  }
 
   if (!digest) return (
     <div style={{ padding: 40, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey-mid)' }}>
@@ -452,18 +421,11 @@ export default function DigestView() {
           font-family: 'Ecofont Vera Sans';
           src: url('https://fonts.cdnfonts.com/css/ecofont-vera-sans') format('truetype');
         }
-        @page { size: ${printMode === 'zine' ? '297mm 210mm' : '210mm 297mm'}; margin: 0; }
-        #carta-print-container { display: none; }
-        #carta-zine-container  { display: none; }
+        @page { size: 297mm 210mm; margin: 0; }
+        #carta-zine-container { display: none; }
         @media print {
           body > #root { display: none !important; }
-          ${printMode === 'zine' ? `
-            #carta-zine-container { display: block !important; }
-          ` : `
-            #carta-print-container { display: block !important; }
-            #carta-print-container .digest-print-page { page-break-after: always; break-after: page; }
-            #carta-print-container .digest-print-page:last-child { page-break-after: avoid; break-after: avoid; }
-          `}
+          #carta-zine-container { display: block !important; }
         }
       `}</style>
 
@@ -480,8 +442,7 @@ export default function DigestView() {
             Template: {t.name}
           </div>
         )}
-        <Btn onClick={() => handlePrint('zine')}>Print Zine</Btn>
-        <Btn primary onClick={() => handlePrint('portrait')}>Print</Btn>
+        <Btn primary onClick={() => window.print()}>Print Zine</Btn>
       </div>
 
       {/* Screen view */}
@@ -496,10 +457,7 @@ export default function DigestView() {
         </div>
       )}
 
-      {printMode === 'zine'
-        ? <ZinePortal digest={digest} t={t} />
-        : <PrintPortal digest={digest} t={t} />
-      }
+      <ZinePortal digest={digest} t={t} />
     </>
   );
 }

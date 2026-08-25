@@ -29,25 +29,9 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
 
-/* ── Print: only show digest pages ─────────────────────────────────── */
+/* ── Print: hide screen chrome ──────────────────────────────────────── */
 @media print {
-  /* Hide everything by default */
   body > * { display: none !important; }
   #root > * { display: none !important; }
-
-  /* Show only the digest pages wrapper */
-  .digest-print-root { display: flex !important; }
-
-  /* Reset layout */
-  nav, .sidebar, .digest-nav, .no-print { display: none !important; }
-  main { margin-left: 0 !important; }
-
   body { background: white !important; margin: 0 !important; padding: 0 !important; }
-
-  /* Screen-only spacing between stacked pages must not push a page past 297mm */
-  .digest-page { margin-bottom: 0 !important; }
-
-  /* Each page breaks cleanly */
-  .digest-print-page { page-break-after: always; break-after: page; }
-  .digest-print-page:last-child { page-break-after: avoid; break-after: avoid; }
 }
