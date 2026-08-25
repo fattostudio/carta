@@ -60,16 +60,11 @@ const TEMPLATES = {
 };
 
 // ── Design helpers ────────────────────────────────────────────────────────────
-const PAPER_DIMS = {
-  'A4':      ['210mm', '297mm'],
-  'Letter':  ['215.9mm', '279.4mm'],
-  'A5':      ['148mm', '210mm'],
-  'Tabloid': ['279.4mm', '431.8mm'],
-};
+const PAGE_NAMES = { 'A4': 'A4', 'Letter': 'letter', 'A5': 'A5', 'Tabloid': 'ledger' };
 
 function getPaperSize(paperSize, orientation) {
-  const [w, h] = PAPER_DIMS[paperSize] || PAPER_DIMS['A4'];
-  return orientation === 'Landscape' ? `${h} ${w}` : `${w} ${h}`;
+  const name = PAGE_NAMES[paperSize] || 'A4';
+  return `${name} ${orientation === 'Landscape' ? 'landscape' : 'portrait'}`;
 }
 
 function mergeDesign(baseT, design) {
@@ -346,9 +341,10 @@ function PortraitPortal({ digest, t, design }) {
 }
 
 // ── Zine pagination ───────────────────────────────────────────────────────────
-// Word limits per A5 panel (2 col, 8.5px text). Conservative so content fits.
-const ZINE_FIRST_WORDS = 200; // first panel: header+lead eat ~40% of height
-const ZINE_CONT_WORDS  = 420; // continuation panels: full 2-col height
+// A5 panel (148.5×210mm), 11mm padding, 2 cols at 8pt/1.75lh ≈ 500w first, 680w cont.
+// Set below capacity so paragraphs aren't clipped mid-text by overflow:hidden.
+const ZINE_FIRST_WORDS = 420;
+const ZINE_CONT_WORDS  = 600;
 
 function paginateArticle(nl) {
   const paras  = getParas(nl.bodyText);
@@ -378,52 +374,39 @@ function paginateArticle(nl) {
 }
 
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
-function ZinePanelCoverLeft({ digest, t }) {
+function ZinePanelCover({ digest, t }) {
   const week = weekLabel(digest.week);
   const isEco = t === TEMPLATES.eco;
   return (
-    <div style={{ width: '148.5mm', height: '210mm', background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : '#fff', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box', borderRight: `0.5pt solid ${isEco ? '#ccc' : '#333'}`, overflow: 'hidden' }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.4)', marginBottom: 'auto' }}>
+    <div style={{ width: '148.5mm', height: '210mm', background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : '#fff', display: 'flex', flexDirection: 'column', padding: '14px 18px', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
         Carta · Zine Edition
       </div>
-      <div>
-        <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 50 : 56, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, borderTop: isEco ? '1pt solid #ccc' : '2pt solid rgba(255,255,255,0.2)', paddingTop: 12, marginBottom: 12 }}>
-          CARTA
-        </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.45)' }}>
-          {week}
-        </div>
+      <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 36 : 42, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, borderTop: isEco ? '1pt solid #ccc' : '2pt solid rgba(255,255,255,0.2)', paddingTop: 8, marginBottom: 4 }}>
+        CARTA
       </div>
-    </div>
-  );
-}
-
-function ZinePanelCoverRight({ digest, t }) {
-  const isEco = t === TEMPLATES.eco;
-  return (
-    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div style={{ fontFamily: 'var(--font-sign)', fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 10 }}>
-        Contents
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.45)', marginBottom: 10, paddingBottom: 8, borderBottom: isEco ? '0.5pt solid #ccc' : '1pt solid rgba(255,255,255,0.15)' }}>
+        {week}
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {digest.newsletters.map((nl, i) => {
-          const teaser = getTeaser(nl.bodyText, 100);
+          const teaser = getTeaser(nl.bodyText, 80);
           return (
-            <div key={nl.id || i} style={{ padding: '5px 0', borderBottom: `0.5pt solid ${t.ruleColor}` }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginBottom: teaser ? 2 : 0 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+            <div key={nl.id || i} style={{ padding: '4px 0', borderBottom: `0.5pt solid ${isEco ? t.ruleColor : 'rgba(255,255,255,0.1)'}` }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6, color: isEco ? '#bbb' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{nl.sender}</div>
-                  <div style={{ fontFamily: t.headlineFamily, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 5.5, color: isEco ? t.metaFg : 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{nl.sender}</div>
+                  <div style={{ fontFamily: t.headlineFamily, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: isEco ? t.headlineFg : '#fff' }}>{nl.subject}</div>
                 </div>
               </div>
-              {teaser && <div style={{ paddingLeft: 16, fontFamily: t.fontFamily, fontSize: 7, lineHeight: 1.5, color: t.metaFg }}>{teaser}</div>}
+              {teaser && <div style={{ paddingLeft: 14, fontFamily: t.fontFamily, fontSize: 6, lineHeight: 1.4, color: isEco ? t.metaFg : 'rgba(255,255,255,0.4)' }}>{teaser}</div>}
             </div>
           );
         })}
       </div>
-      <div style={{ borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 7, fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', letterSpacing: '0.1em' }}>
-        {digest.newsletters.length} issues · fold & staple on short edge
+      <div style={{ borderTop: `0.5pt solid ${isEco ? t.ruleColor : 'rgba(255,255,255,0.15)'}`, paddingTop: 5, fontFamily: 'var(--font-mono)', fontSize: 6, color: isEco ? '#bbb' : 'rgba(255,255,255,0.35)', letterSpacing: '0.1em' }}>
+        {digest.newsletters.length} issues · fold & staple
       </div>
     </div>
   );
@@ -506,10 +489,9 @@ function ZinePortal({ digest, t }) {
     containerRef.current = el;
   }
 
-  // Build reading-order panel list
+  // Build reading-order panel list (page 1 = front cover with TOC)
   const panels = [
-    <ZinePanelCoverLeft  key="cl" digest={digest} t={t} />,
-    <ZinePanelCoverRight key="cr" digest={digest} t={t} />,
+    <ZinePanelCover key="cover" digest={digest} t={t} />,
   ];
   digest.newsletters.forEach((nl, ai) => {
     paginateArticle(nl).forEach((pg, pi) => {
