@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
+import { getDesign } from '../store';
 
 // ── Text cleaning ─────────────────────────────────────────────────────────────
 function cleanBody(raw = '') {
@@ -57,6 +58,27 @@ const TEMPLATES = {
     margins: '20px 24px',
   },
 };
+
+// ── Design helpers ────────────────────────────────────────────────────────────
+const PAPER_DIMS = {
+  'A4':      ['210mm', '297mm'],
+  'Letter':  ['215.9mm', '279.4mm'],
+  'A5':      ['148mm', '210mm'],
+  'Tabloid': ['279.4mm', '431.8mm'],
+};
+
+function getPaperSize(paperSize, orientation) {
+  const [w, h] = PAPER_DIMS[paperSize] || PAPER_DIMS['A4'];
+  return orientation === 'Landscape' ? `${h} ${w}` : `${w} ${h}`;
+}
+
+function mergeDesign(baseT, design) {
+  return {
+    ...baseT,
+    fontFamily: design.bodyFont || baseT.fontFamily,
+    headlineFamily: design.displayFont || baseT.headlineFamily,
+  };
+}
 
 // ── Cover Page ────────────────────────────────────────────────────────────────
 function CoverPage({ digest, t }) {
@@ -188,6 +210,146 @@ function ArticlePage({ nl, index, total, t }) {
         <span>{wc.toLocaleString()} words</span>
       </div>
     </div>
+  );
+}
+
+// ── Portrait Print Portal ─────────────────────────────────────────────────────
+function PrintCoverPage({ digest, t }) {
+  const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const isEco = t === TEMPLATES.eco;
+
+  return (
+    <div style={{ breakAfter: 'page', pageBreakAfter: 'always', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100vh' }}>
+      <div style={{ background: t.coverBg, color: t.coverFg, padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isEco ? '1pt solid #ccc' : 'none' }}>
+        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 12, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>Carta</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: isEco ? '#999' : '#888' }}>Newsletter Digest</span>
+      </div>
+      <div style={{ flex: 1, padding: '36px 36px 0', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 28 }}>{date}</div>
+        <div style={{ borderTop: isEco ? '1pt solid #ccc' : '3pt solid #000', paddingTop: 18, marginBottom: 36 }}>
+          <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 52 : 72, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.9, color: t.headlineFg }}>
+            The<br />Weekend<br />Digest
+          </div>
+        </div>
+        {isEco && (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.12em', marginBottom: 16 }}>
+            ♻ Printed using Ecofont · reduced ink consumption
+          </div>
+        )}
+        <div style={{ borderTop: isEco ? '1pt solid #ccc' : '2pt solid #000' }}>
+          <div style={{ background: isEco ? 'transparent' : '#000', color: isEco ? t.metaFg : '#fff', padding: isEco ? '8px 0' : '6px 0 6px 16px', fontFamily: 'var(--font-sign)', fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', borderBottom: isEco ? '1pt solid #ccc' : 'none' }}>
+            Contents
+          </div>
+          {digest.newsletters.map((nl, i) => (
+            <div key={nl.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr auto', gap: 12, padding: '9px 0', borderBottom: `1pt solid ${t.ruleColor}`, alignItems: 'baseline' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa' }}>{String(i + 1).padStart(2, '0')}</span>
+              <div>
+                <div style={{ fontFamily: t.headlineFamily, fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: t.metaFg, marginTop: 2, letterSpacing: '0.06em' }}>{nl.sender}</div>
+              </div>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', whiteSpace: 'nowrap' }}>
+                {nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ borderTop: isEco ? '1pt solid #ccc' : '2pt solid #000', padding: '10px 20px', display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>{digest.newsletters.length} ISSUES · CARTA LABEL</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>PRINT EDITION</span>
+      </div>
+    </div>
+  );
+}
+
+function PrintArticlePage({ nl, index, total, t, design, pageNum }) {
+  const paras = getParas(nl.bodyText);
+  const lead = paras[0] || '';
+  const body = paras.slice(1);
+  const wc = paras.join(' ').split(/\s+/).length;
+  const rt = Math.max(1, Math.round(wc / 200));
+  const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+  const source = domainFromEmail(nl.senderEmail);
+  const isEco = t === TEMPLATES.eco;
+
+  const colCount =
+    design.layout === 'Two column'      ? 2 :
+    design.layout === 'Newspaper grid'  ? 3 :
+    design.layout === 'Full bleed'      ? 1 :
+    body.length > 8 ? 2 : 1;
+
+  return (
+    <div style={{ breakAfter: 'page', pageBreakAfter: 'always', display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100vh' }}>
+      <div style={{ background: t.headerBg, color: t.headerFg, padding: '8px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isEco ? '1pt solid #ccc' : 'none' }}>
+        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+          The Weekend Digest · Carta
+        </span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: isEco ? '#999' : '#888', letterSpacing: '0.1em' }}>
+          {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        </span>
+      </div>
+      <div style={{ flex: 1, padding: t.margins, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ breakInside: 'avoid', marginBottom: 16 }}>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', border: `1pt solid ${t.tagBorder}`, padding: '2px 8px', color: t.tagFg }}>
+              {nl.sender}
+            </span>
+          </div>
+          <div style={{ borderTop: isEco ? '1pt solid #ccc' : '3pt solid #000', paddingTop: 10, marginBottom: 10 }}>
+            <h2 style={{ fontFamily: t.headlineFamily, fontSize: t.fontSize.headline, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0 }}>
+              {nl.subject}
+            </h2>
+          </div>
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: t.fontSize.meta, color: t.metaFg, letterSpacing: '0.12em', textTransform: 'uppercase', paddingBottom: 14, marginBottom: 16, borderBottom: `1pt solid ${t.ruleColor}` }}>
+            <span>{date}</span><span>·</span>
+            <span>{rt} min read</span>
+            {source && <><span>·</span><span>{source}</span></>}
+          </div>
+        </div>
+        {lead && (
+          <p style={{ fontFamily: t.fontFamily, fontSize: t.fontSize.lead, lineHeight: 1.75, fontWeight: 500, color: t.bodyFg, marginBottom: 16 }}>
+            {lead}
+          </p>
+        )}
+        <div style={{ columns: colCount, columnGap: 28, columnRule: colCount > 1 ? `1pt solid ${t.ruleColor}` : 'none', flex: 1 }}>
+          {body.map((p, i) => (
+            <p key={i} style={{ fontFamily: t.fontFamily, fontSize: t.fontSize.body, lineHeight: 1.8, color: t.bodyFg, marginBottom: 12, breakInside: 'avoid' }}>
+              {p}
+            </p>
+          ))}
+        </div>
+      </div>
+      <div style={{ borderTop: `1pt solid ${t.ruleColor}`, padding: '8px 24px', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>
+        <span>{nl.sender}</span>
+        {design.pageNums ? <span>{pageNum}</span> : <span>{wc.toLocaleString()} words</span>}
+      </div>
+    </div>
+  );
+}
+
+function PortraitPortal({ digest, t, design }) {
+  const containerRef = useRef(null);
+  if (!containerRef.current) {
+    let el = document.getElementById('carta-portrait-container');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'carta-portrait-container';
+      document.body.appendChild(el);
+    }
+    containerRef.current = el;
+  }
+  let pageNum = 0;
+  return createPortal(
+    <div>
+      {design.coverPage && (() => { pageNum++; return <PrintCoverPage key="cover" digest={digest} t={t} />; })()}
+      {digest.newsletters.map((nl, i) => {
+        pageNum++;
+        return <PrintArticlePage key={nl.id || i} nl={nl} index={i} total={digest.newsletters.length} t={t} design={design} pageNum={pageNum} />;
+      })}
+    </div>,
+    containerRef.current
   );
 }
 
@@ -479,7 +641,28 @@ export default function DigestView() {
   }, []);
 
   const savedTemplate = localStorage.getItem('carta-template') || 'standard';
-  const t = TEMPLATES[savedTemplate] || TEMPLATES.standard;
+  const design = getDesign();
+  const t = mergeDesign(TEMPLATES[savedTemplate] || TEMPLATES.standard, design);
+
+  function printPortrait() {
+    const s = document.createElement('style');
+    s.textContent = `@page { size: ${getPaperSize(design.paperSize, design.orientation)}; margin: 16mm 18mm; }`;
+    document.head.appendChild(s);
+    document.body.classList.add('carta-print-portrait');
+    window.print();
+    document.head.removeChild(s);
+    document.body.classList.remove('carta-print-portrait');
+  }
+
+  function printZine() {
+    const s = document.createElement('style');
+    s.textContent = `@page { size: 297mm 210mm; margin: 0; }`;
+    document.head.appendChild(s);
+    document.body.classList.add('carta-print-zine');
+    window.print();
+    document.head.removeChild(s);
+    document.body.classList.remove('carta-print-zine');
+  }
 
   if (!digest) return (
     <div style={{ padding: 40, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey-mid)' }}>
@@ -494,11 +677,11 @@ export default function DigestView() {
           font-family: 'Ecofont Vera Sans';
           src: url('https://fonts.cdnfonts.com/css/ecofont-vera-sans') format('truetype');
         }
-        @page { size: 297mm 210mm; margin: 0; }
-        #carta-zine-container { display: none; }
+        #carta-portrait-container, #carta-zine-container { display: none; }
         @media print {
           body > #root { display: none !important; }
-          #carta-zine-container { display: block !important; }
+          body.carta-print-portrait #carta-portrait-container { display: block !important; }
+          body.carta-print-zine     #carta-zine-container     { display: block !important; }
         }
       `}</style>
 
@@ -515,7 +698,8 @@ export default function DigestView() {
             Template: {t.name}
           </div>
         )}
-        <Btn primary onClick={() => window.print()}>Print Zine</Btn>
+        <Btn onClick={printPortrait}>Print</Btn>
+        <Btn primary onClick={printZine}>Print Zine</Btn>
       </div>
 
       {/* Screen view */}
@@ -530,6 +714,7 @@ export default function DigestView() {
         </div>
       )}
 
+      <PortraitPortal digest={digest} t={t} design={design} />
       <ZinePortal digest={digest} t={t} />
     </>
   );
