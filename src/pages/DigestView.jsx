@@ -8,6 +8,25 @@ import { getDesign, weekLabel } from '../store';
 // ── Text cleaning ─────────────────────────────────────────────────────────────
 function cleanBody(raw = '') {
   return raw
+    // Drop embedded images/captions/tables wholesale (tag + inner content),
+    // not just the surrounding markup — a figcaption's text is a photo
+    // credit, not article prose.
+    .replace(/<figure[\s\S]*?<\/figure>/gi, '')
+    .replace(/<table[\s\S]*?<\/table>/gi, '')
+    .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, '')
+    .replace(/<(hr|img|br)\b[^>]*\/?>/gi, '')
+    // Markdown links: keep the visible label, drop the URL, e.g.
+    // "[here](https://x.com)" -> "here"
+    .replace(/\[([^\]]*)\]\(https?:\/\/[^)]*\)/g, '$1')
+    // Markdown link cut off mid-URL (source got truncated before the
+    // closing paren) — keep the label, drop the dangling "](". Trailing
+    // whitespace is restricted to the same line so this can't eat the
+    // blank-line paragraph separator that follows.
+    .replace(/\[([^\]\n]*)\]\([ \t]*$/gm, '$1')
+    // Stray markdown emphasis asterisks
+    .replace(/\*+/g, '')
+    // Any remaining HTML tags (inline formatting etc.) — keep their text
+    .replace(/<[^>]+>/g, ' ')
     .replace(/https?:\/\/[^\s<>"]+/g, '')
     .replace(/[\(\[\{]\s*[\)\]\}]/g, '')
     .replace(/^[\s\W]{0,3}$/gm, '')
@@ -15,13 +34,17 @@ function cleanBody(raw = '') {
     .trim();
 }
 
+// Photo credit lines ("<description> | REUTERS/Name, edited by X") that
+// slip through as full sentences — not article prose, so drop them.
+const CAPTION_RE = /\|\s*(REUTERS|AP Photo|AP\b|AFP|Getty Images|Getty|Bloomberg|Shutterstock)\b/i;
+
 function getParas(raw = '') {
   const cleaned = cleanBody(raw);
   let chunks = cleaned.split(/\n{2,}/);
   if (chunks.length < 3) chunks = cleaned.split(/\n/);
   return chunks
     .map(p => p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-    .filter(p => p.length > 60);
+    .filter(p => p.length > 60 && !CAPTION_RE.test(p));
 }
 
 function domainFromEmail(email = '') {
@@ -488,36 +511,37 @@ function measureZinePanels(digest, t) {
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
 function ZinePanelCover({ digest, t }) {
   const week = weekLabel(digest.week);
-  const isEco = t === TEMPLATES.eco;
   return (
-    <div style={{ width: '148.5mm', height: '210mm', background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : '#fff', display: 'flex', flexDirection: 'column', padding: '14px 18px', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', color: '#111', display: 'flex', flexDirection: 'column', padding: '14px 18px', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>
         Carta · Zine Edition
       </div>
-      <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 36 : 42, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, borderTop: isEco ? '1pt solid #ccc' : '2pt solid rgba(255,255,255,0.2)', paddingTop: 8, marginBottom: 4 }}>
-        CARTA
+      <div style={{ margin: '0 -18px', marginBottom: 6, overflow: 'hidden' }}>
+        <div style={{ fontFamily: t.headlineFamily, fontSize: 176, fontWeight: 800, letterSpacing: '-0.04em', textTransform: 'uppercase', lineHeight: 0.82, color: '#000', whiteSpace: 'nowrap', textAlign: 'center' }}>
+          CARTA
+        </div>
       </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.45)', marginBottom: 10, paddingBottom: 8, borderBottom: isEco ? '0.5pt solid #ccc' : '1pt solid rgba(255,255,255,0.15)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 10, paddingBottom: 8, borderBottom: '1pt solid #000' }}>
         {week}
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {digest.newsletters.map((nl, i) => {
           const teaser = getTeaser(nl.bodyText, 80);
           return (
-            <div key={nl.id || i} style={{ padding: '4px 0', borderBottom: `0.5pt solid ${isEco ? t.ruleColor : 'rgba(255,255,255,0.1)'}` }}>
+            <div key={nl.id || i} style={{ padding: '4px 0', borderBottom: `0.5pt solid ${t.ruleColor}` }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6, color: isEco ? '#bbb' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6, color: '#bbb', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
                 <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 5.5, color: isEco ? t.metaFg : 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{nl.sender}</div>
-                  <div style={{ fontFamily: t.headlineFamily, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: isEco ? t.headlineFg : '#fff' }}>{nl.subject}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 5.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{nl.sender}</div>
+                  <div style={{ fontFamily: t.headlineFamily, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
                 </div>
               </div>
-              {teaser && <div style={{ paddingLeft: 14, fontFamily: t.fontFamily, fontSize: 6, lineHeight: 1.4, color: isEco ? t.metaFg : 'rgba(255,255,255,0.4)' }}>{teaser}</div>}
+              {teaser && <div style={{ paddingLeft: 14, fontFamily: t.fontFamily, fontSize: 6, lineHeight: 1.4, color: t.metaFg }}>{teaser}</div>}
             </div>
           );
         })}
       </div>
-      <div style={{ borderTop: `0.5pt solid ${isEco ? t.ruleColor : 'rgba(255,255,255,0.15)'}`, paddingTop: 5, fontFamily: 'var(--font-mono)', fontSize: 6, color: isEco ? '#bbb' : 'rgba(255,255,255,0.35)', letterSpacing: '0.1em' }}>
+      <div style={{ borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 5, fontFamily: 'var(--font-mono)', fontSize: 6, color: '#bbb', letterSpacing: '0.1em' }}>
         {digest.newsletters.length} issues · fold & staple
       </div>
     </div>
