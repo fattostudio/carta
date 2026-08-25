@@ -489,9 +489,11 @@ function ZinePortal({ digest, t }) {
     containerRef.current = el;
   }
 
-  // Build reading-order panel list (page 1 = front cover with TOC)
+  // Build reading-order panel list
+  // Page 1 = front cover, page 2 = inside front cover (blank)
   const panels = [
     <ZinePanelCover key="cover" digest={digest} t={t} />,
+    <ZinePanelBlank key="ifc" pageNum="" />,
   ];
   digest.newsletters.forEach((nl, ai) => {
     paginateArticle(nl).forEach((pg, pi) => {
