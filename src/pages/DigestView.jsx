@@ -425,7 +425,7 @@ function measureZinePanels(digest, t) {
       const paraEls = [];
       for (const text of rem) {
         const p = document.createElement('p');
-        p.style.cssText = `font-family:${t.fontFamily};font-size:9.5px;line-height:1.55;color:${t.bodyFg};margin:0 0 4px;break-inside:avoid`;
+        p.style.cssText = `font-family:${t.fontFamily};font-size:9.5px;line-height:1.55;color:${t.bodyFg};margin:0 0 4px`;
         p.textContent = text;
         bd.appendChild(p);
         paraEls.push(p);
@@ -435,16 +435,48 @@ function measureZinePanels(digest, t) {
       // (content flows into virtual columns 3, 4, … to the right), so check
       // both vertical AND horizontal bounds.
       const bdRect = bd.getBoundingClientRect();
+      const fitsBounds = (el) => {
+        const r = el.getBoundingClientRect();
+        return r.bottom <= bdRect.bottom + 1 && r.right <= bdRect.right + 1;
+      };
       let fit = 0;
       for (let i = 0; i < paraEls.length; i++) {
-        const r = paraEls[i].getBoundingClientRect();
-        if (r.bottom > bdRect.bottom + 1 || r.right > bdRect.right + 1) break;
+        if (!fitsBounds(paraEls[i])) break;
         fit = i + 1;
       }
-      if (fit === 0 && rem.length > 0) fit = 1;
 
-      results.push({ nl, ai, lead: first ? lead : null, body: rem.slice(0, fit), isFirst: first });
-      rem = rem.slice(fit);
+      const panelBody = rem.slice(0, fit);
+      let nextRem = rem.slice(fit);
+
+      // The first paragraph that doesn't fully fit gets split at a word
+      // boundary via binary search, so the overflowing tail carries over
+      // to the next panel instead of being lost to overflow:hidden.
+      if (fit < paraEls.length) {
+        const words = rem[fit].split(' ');
+        const boundaryEl = paraEls[fit];
+        let lo = 0, hi = words.length;
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2);
+          boundaryEl.textContent = words.slice(0, mid).join(' ');
+          if (fitsBounds(boundaryEl)) lo = mid; else hi = mid - 1;
+        }
+        if (lo > 0) {
+          panelBody.push(words.slice(0, lo).join(' '));
+          nextRem = [words.slice(lo).join(' '), ...nextRem.slice(1)];
+        }
+      }
+
+      // Safety net: guarantee forward progress even in the pathological
+      // case where not even a single word fits on this panel.
+      if (panelBody.length === 0 && nextRem.length > 0) {
+        const words = nextRem[0].split(' ');
+        panelBody.push(words[0]);
+        const rest = words.slice(1).join(' ');
+        nextRem = [rest, ...nextRem.slice(1)].filter(p => p.length > 0);
+      }
+
+      results.push({ nl, ai, lead: first ? lead : null, body: panelBody, isFirst: first });
+      rem = nextRem;
       first = false;
     } while (rem.length > 0);
   }
@@ -532,7 +564,7 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
           </p>
         )}
         {body.map((p, i) => (
-          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9.5, lineHeight: 1.55, color: t.bodyFg, marginBottom: 4, breakInside: 'avoid' }}>
+          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9.5, lineHeight: 1.55, color: t.bodyFg, marginBottom: 4 }}>
             {p}
           </p>
         ))}
