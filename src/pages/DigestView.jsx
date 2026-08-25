@@ -148,22 +148,24 @@ function ArticlePage({ nl, index, total, t }) {
       </div>
 
       <div style={{ flex: 1, padding: t.margins, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ marginBottom: 12 }}>
-          <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '2px 8px', color: t.tagFg }}>
-            {nl.sender}
-          </span>
-        </div>
+        <div style={{ breakInside: 'avoid' }}>
+          <div style={{ marginBottom: 12 }}>
+            <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '2px 8px', color: t.tagFg }}>
+              {nl.sender}
+            </span>
+          </div>
 
-        <div style={{ borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 12, marginBottom: 12 }}>
-          <h2 style={{ fontFamily: t.headlineFamily, fontSize: t.fontSize.headline, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0 }}>
-            {nl.subject}
-          </h2>
-        </div>
+          <div style={{ borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 12, marginBottom: 12 }}>
+            <h2 style={{ fontFamily: t.headlineFamily, fontSize: t.fontSize.headline, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0 }}>
+              {nl.subject}
+            </h2>
+          </div>
 
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: t.fontSize.meta, color: t.metaFg, letterSpacing: '0.12em', textTransform: 'uppercase', paddingBottom: 16, marginBottom: 18, borderBottom: `1px solid ${t.ruleColor}` }}>
-          <span>{date}</span><span>·</span>
-          <span>{rt} min read</span>
-          {source && <><span>·</span><span>{source}</span></>}
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: t.fontSize.meta, color: t.metaFg, letterSpacing: '0.12em', textTransform: 'uppercase', paddingBottom: 16, marginBottom: 18, borderBottom: `1px solid ${t.ruleColor}` }}>
+            <span>{date}</span><span>·</span>
+            <span>{rt} min read</span>
+            {source && <><span>·</span><span>{source}</span></>}
+          </div>
         </div>
 
         {lead && (

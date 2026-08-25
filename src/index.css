@@ -29,6 +29,12 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
 
+/* ── Print: fix physical page size/margins so a 297mm box == 1 sheet ── */
+@page {
+  size: 210mm 297mm;
+  margin: 0;
+}
+
 /* ── Print: only show digest pages ─────────────────────────────────── */
 @media print {
   /* Hide everything by default */
@@ -43,6 +49,9 @@ a { text-decoration: none; color: inherit; }
   main { margin-left: 0 !important; }
 
   body { background: white !important; margin: 0 !important; padding: 0 !important; }
+
+  /* Screen-only spacing between stacked pages must not push a page past 297mm */
+  .digest-page { margin-bottom: 0 !important; }
 
   /* Each page breaks cleanly */
   .digest-print-page { page-break-after: always; break-after: page; }
