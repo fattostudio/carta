@@ -47,7 +47,7 @@ export function saveTemplate(id) {
 }
 
 export function getDesign() {
-  return JSON.parse(localStorage.getItem(KEYS.design) || JSON.stringify({
+  const defaults = {
     paper: '#ffffff',
     ink: '#111111',
     accent: '#888888',
@@ -59,7 +59,10 @@ export function getDesign() {
     coverPage: true,
     images: true,
     pageNums: true,
-  }));
+    printFormat: 'Normal',
+  };
+  const stored = JSON.parse(localStorage.getItem(KEYS.design) || '{}');
+  return { ...defaults, ...stored };
 }
 
 export function saveDesign(design) {

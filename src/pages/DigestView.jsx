@@ -766,7 +766,7 @@ export default function DigestView() {
 
   useEffect(() => {
     if (searchParams.get('print') === '1') {
-      setTimeout(() => printPortrait(), 800);
+      setTimeout(() => printDigest(), 800);
     }
   }, []);
 
@@ -805,6 +805,11 @@ export default function DigestView() {
     );
   }
 
+  function printDigest() {
+    if (design.printFormat === 'Zine') printZine();
+    else printPortrait();
+  }
+
   if (!digest) return (
     <div style={{ padding: 40, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey-mid)' }}>
       Digest not found. <button onClick={() => navigate('/digests')} style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
@@ -836,11 +841,10 @@ export default function DigestView() {
         </div>
         {!isMobile && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.08em', marginRight: 8 }}>
-            Template: {t.name}
+            {t.name} · {design.printFormat}
           </div>
         )}
-        <Btn onClick={printPortrait}>Print</Btn>
-        <Btn primary onClick={printZine}>Print Zine</Btn>
+        <Btn primary onClick={printDigest}>Print</Btn>
       </div>
 
       {/* Screen view */}

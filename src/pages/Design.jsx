@@ -6,6 +6,10 @@ import { useMobile } from '../hooks/useMobile';
 const FONTS = ['Helvetica Neue', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'Garamond'];
 const LAYOUTS = ['One article per page', 'Two column', 'Newspaper grid', 'Full bleed'];
 const PAPER_SIZES = ['A4', 'Letter', 'A5', 'Tabloid'];
+const PRINT_FORMATS = [
+  { id: 'Normal', description: 'One page per article, laid out with your layout and paper settings below.' },
+  { id: 'Zine', description: 'A5 booklet — folded and saddle-stitched, imposed automatically for double-sided printing.' },
+];
 
 const TEMPLATES = [
   {
@@ -142,46 +146,72 @@ export default function Design() {
         </div>
       </Section>
 
-      {/* Layout */}
-      <Section label="Layout">
+      {/* Print format */}
+      <Section label="Print format">
         <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 8 }}>
-          {LAYOUTS.map(l => (
-            <div key={l} onClick={() => update('layout', l)} style={{
+          {PRINT_FORMATS.map(({ id, description }) => (
+            <div key={id} onClick={() => update('printFormat', id)} style={{
               padding: '10px 12px',
-              border: `2px solid ${design.layout === l ? 'var(--black)' : 'var(--grey-rule)'}`,
+              border: `2px solid ${design.printFormat === id ? 'var(--black)' : 'var(--grey-rule)'}`,
               cursor: 'pointer',
-              fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700,
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              color: design.layout === l ? 'var(--black)' : 'var(--grey-light)',
-              background: design.layout === l ? 'var(--grey-bg)' : 'var(--white)',
+              background: design.printFormat === id ? 'var(--grey-bg)' : 'var(--white)',
               transition: 'all 0.1s',
             }}>
-              {l}
+              <div style={{ fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: design.printFormat === id ? 'var(--black)' : 'var(--grey-light)', marginBottom: 4 }}>
+                {id}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--grey-mid)', lineHeight: 1.5, letterSpacing: '0.02em' }}>
+                {description}
+              </div>
             </div>
           ))}
         </div>
       </Section>
 
-      {/* Output */}
-      <Section label="Output">
-        <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 12, marginBottom: 14 }}>
-          <div>
-            <FieldLabel>Paper size</FieldLabel>
-            <Select value={design.paperSize} onChange={e => update('paperSize', e.target.value)}>
-              {PAPER_SIZES.map(s => <option key={s}>{s}</option>)}
-            </Select>
-          </div>
-          <div>
-            <FieldLabel>Orientation</FieldLabel>
-            <Select value={design.orientation} onChange={e => update('orientation', e.target.value)}>
-              <option>Portrait</option><option>Landscape</option>
-            </Select>
-          </div>
-        </div>
-        <ToggleRow label="Cover page" on={design.coverPage} onChange={v => update('coverPage', v)} />
-        <ToggleRow label="Images" sub="Pull images from newsletter content" on={design.images} onChange={v => update('images', v)} />
-        <ToggleRow label="Page numbers" on={design.pageNums} onChange={v => update('pageNums', v)} last />
-      </Section>
+      {design.printFormat !== 'Zine' && (
+        <>
+          {/* Layout */}
+          <Section label="Layout">
+            <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 8 }}>
+              {LAYOUTS.map(l => (
+                <div key={l} onClick={() => update('layout', l)} style={{
+                  padding: '10px 12px',
+                  border: `2px solid ${design.layout === l ? 'var(--black)' : 'var(--grey-rule)'}`,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: design.layout === l ? 'var(--black)' : 'var(--grey-light)',
+                  background: design.layout === l ? 'var(--grey-bg)' : 'var(--white)',
+                  transition: 'all 0.1s',
+                }}>
+                  {l}
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          {/* Output */}
+          <Section label="Output">
+            <div style={{ display: 'grid', gridTemplateColumns: twoCol, gap: 12, marginBottom: 14 }}>
+              <div>
+                <FieldLabel>Paper size</FieldLabel>
+                <Select value={design.paperSize} onChange={e => update('paperSize', e.target.value)}>
+                  {PAPER_SIZES.map(s => <option key={s}>{s}</option>)}
+                </Select>
+              </div>
+              <div>
+                <FieldLabel>Orientation</FieldLabel>
+                <Select value={design.orientation} onChange={e => update('orientation', e.target.value)}>
+                  <option>Portrait</option><option>Landscape</option>
+                </Select>
+              </div>
+            </div>
+            <ToggleRow label="Cover page" on={design.coverPage} onChange={v => update('coverPage', v)} />
+            <ToggleRow label="Images" sub="Pull images from newsletter content" on={design.images} onChange={v => update('images', v)} />
+            <ToggleRow label="Page numbers" on={design.pageNums} onChange={v => update('pageNums', v)} last />
+          </Section>
+        </>
+      )}
 
       {/* Live preview */}
       <Section label="Preview">
