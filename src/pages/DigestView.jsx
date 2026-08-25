@@ -191,109 +191,151 @@ function ArticlePage({ nl, index, total, t }) {
   );
 }
 
-// ── Zine Cover (full A4 landscape — split left/right panels) ─────────────────
-function ZineCover({ digest, t }) {
+// ── Zine pagination ───────────────────────────────────────────────────────────
+// Word limits per A5 panel (2 col, 8.5px text). Conservative so content fits.
+const ZINE_FIRST_WORDS = 200; // first panel: header+lead eat ~40% of height
+const ZINE_CONT_WORDS  = 420; // continuation panels: full 2-col height
+
+function paginateArticle(nl) {
+  const paras  = getParas(nl.bodyText);
+  const lead   = paras[0] || '';
+  const body   = paras.slice(1);
+  const pages  = [];
+
+  let firstBody = [], fw = lead.split(/\s+/).length;
+  for (const p of body) {
+    const w = p.split(/\s+/).length;
+    if (fw + w > ZINE_FIRST_WORDS && firstBody.length > 0) break;
+    firstBody.push(p); fw += w;
+  }
+  pages.push({ lead, body: firstBody, isFirst: true });
+
+  let chunk = [], cw = 0;
+  for (const p of body.slice(firstBody.length)) {
+    const w = p.split(/\s+/).length;
+    if (cw + w > ZINE_CONT_WORDS && chunk.length > 0) {
+      pages.push({ lead: null, body: chunk, isFirst: false });
+      chunk = [p]; cw = w;
+    } else { chunk.push(p); cw += w; }
+  }
+  if (chunk.length > 0) pages.push({ lead: null, body: chunk, isFirst: false });
+
+  return pages;
+}
+
+// ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
+function ZinePanelCoverLeft({ digest, t }) {
   const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
   const isEco = t === TEMPLATES.eco;
-
   return (
-    <div className="zine-cover" style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: 'page', pageBreakAfter: 'always' }}>
-      {/* Left: headline */}
-      <div style={{ width: '148.5mm', flexShrink: 0, background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : t.coverFg, display: 'flex', flexDirection: 'column', padding: '28px', borderRight: isEco ? '1px solid #ccc' : 'none' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.5)', marginBottom: 'auto' }}>
-          Carta · Zine Edition
-        </div>
-        <div>
-          <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 52 : 60, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, color: isEco ? '#111' : '#fff', borderTop: isEco ? '1px solid #ccc' : '3px solid rgba(255,255,255,0.25)', paddingTop: 14, marginBottom: 16 }}>
-            The<br />Week&shy;end<br />Digest
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.55)' }}>
-            {date}
-          </div>
-        </div>
+    <div style={{ width: '148.5mm', height: '210mm', background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : '#fff', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box', borderRight: `0.5pt solid ${isEco ? '#ccc' : '#333'}`, overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.16em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.4)', marginBottom: 'auto' }}>
+        Carta · Zine Edition
       </div>
-
-      {/* Right: TOC */}
-      <div style={{ width: '148.5mm', flexShrink: 0, background: '#fff', display: 'flex', flexDirection: 'column', padding: '28px' }}>
-        <div style={{ fontFamily: 'var(--font-sign)', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 14 }}>
-          Contents
+      <div>
+        <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 50 : 56, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, borderTop: isEco ? '1pt solid #ccc' : '2pt solid rgba(255,255,255,0.2)', paddingTop: 12, marginBottom: 12 }}>
+          The<br />Week&shy;end<br />Digest
         </div>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {digest.newsletters.map((nl, i) => (
-            <div key={nl.id} style={{ display: 'flex', gap: 12, padding: '8px 0', borderBottom: `1px solid ${t.ruleColor}`, alignItems: 'baseline' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#aaa', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
-              <div>
-                <div style={{ fontFamily: t.headlineFamily, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: t.metaFg, marginTop: 2, letterSpacing: '0.06em' }}>{nl.sender}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ borderTop: `1px solid ${t.ruleColor}`, paddingTop: 10, fontFamily: 'var(--font-mono)', fontSize: 8, color: '#aaa', letterSpacing: '0.1em' }}>
-          {digest.newsletters.length} issues · print edition
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.45)' }}>
+          {date}
         </div>
       </div>
     </div>
   );
 }
 
-// ── Zine Article (2-col flow across as many A4 landscape sheets as needed) ────
-function ZineArticle({ nl, index, total, t }) {
-  const paras = getParas(nl.bodyText);
-  const lead = paras[0] || '';
-  const body = paras.slice(1);
-  const wc = paras.join(' ').split(/\s+/).length;
-  const rt = Math.max(1, Math.round(wc / 200));
-  const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
-  const source = domainFromEmail(nl.senderEmail);
+function ZinePanelCoverRight({ digest, t }) {
+  const isEco = t === TEMPLATES.eco;
+  return (
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box', overflow: 'hidden' }}>
+      <div style={{ fontFamily: 'var(--font-sign)', fontSize: 9, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 10 }}>
+        Contents
+      </div>
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {digest.newsletters.map((nl, i) => (
+          <div key={nl.id || i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `0.5pt solid ${t.ruleColor}`, alignItems: 'baseline' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <div style={{ fontFamily: t.headlineFamily, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: t.metaFg, marginTop: 2 }}>{nl.sender}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 7, fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', letterSpacing: '0.1em' }}>
+        {digest.newsletters.length} issues · fold & staple on short edge
+      </div>
+    </div>
+  );
+}
+
+function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum }) {
+  const wc  = getParas(nl.bodyText).join(' ').split(/\s+/).length;
+  const rt  = Math.max(1, Math.round(wc / 200));
+  const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
   const isEco = t === TEMPLATES.eco;
 
   return (
-    <div style={{
-      breakBefore: 'page', pageBreakBefore: 'always',
-      columns: 4, columnGap: '8mm',
-      columnRule: `1px solid ${t.ruleColor}`,
-    }}>
-      {/* Header spans all 4 columns */}
-      <div style={{ columnSpan: 'all', breakInside: 'avoid', marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${t.ruleColor}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '2px 7px', color: t.tagFg }}>
-            {nl.sender}
-          </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: t.metaFg, letterSpacing: '0.1em' }}>
-            {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-          </span>
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', padding: '11mm 12mm', boxSizing: 'border-box', overflow: 'hidden' }}>
+      {isFirst ? (
+        <div style={{ flexShrink: 0, marginBottom: 7 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 5, marginBottom: 6, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.metaFg }}>Carta Zine</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg }}>{String(index + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}</span>
+          </div>
+          <div style={{ marginBottom: 5 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, border: `0.5pt solid ${t.tagBorder}`, padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.1em', color: t.tagFg }}>
+              {nl.sender}
+            </span>
+          </div>
+          <h2 style={{ fontFamily: t.headlineFamily, fontSize: 19, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0, borderTop: isEco ? '0.5pt solid #ccc' : '2pt solid #000', paddingTop: 6, marginBottom: 6 }}>
+            {nl.subject}
+          </h2>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase', paddingBottom: 7, marginBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+            {date}{rt ? ` · ${rt} min` : ''} · {wc.toLocaleString()} words
+          </div>
         </div>
-        <h2 style={{ fontFamily: t.headlineFamily, fontSize: 32, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: '0 0 10px', borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 10 }}>
-          {nl.subject}
-        </h2>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: 8, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          <span>{date}</span><span>·</span>
-          <span>{rt} min read</span>
-          {source && <><span>·</span><span>{source}</span></>}
+      ) : (
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', paddingBottom: 5, marginBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{nl.sender}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#ccc' }}>{pageNum}</span>
         </div>
-      </div>
-
-      {/* Lead spans all 4 columns */}
-      {lead && (
-        <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 12, lineHeight: 1.75, fontWeight: 500, color: t.bodyFg, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${t.ruleColor}` }}>
-          {lead}
-        </p>
       )}
 
-      {/* Body flows in 4 columns (2 per A5 half) */}
-      {body.map((p, i) => (
-        <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.8, color: t.bodyFg, marginBottom: 10, breakInside: 'avoid' }}>
-          {p}
-        </p>
-      ))}
+      <div style={{ flex: 1, overflow: 'hidden', columns: 2, columnGap: '4mm', columnRule: `0.5pt solid ${t.ruleColor}` }}>
+        {lead && isFirst && (
+          <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 9, lineHeight: 1.7, fontWeight: 500, color: t.bodyFg, marginBottom: 7, paddingBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+            {lead}
+          </p>
+        )}
+        {body.map((p, i) => (
+          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 8, lineHeight: 1.75, color: t.bodyFg, marginBottom: 5, breakInside: 'avoid' }}>
+            {p}
+          </p>
+        ))}
+      </div>
+
+      <div style={{ flexShrink: 0, borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 4, marginTop: 4, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#ccc' }}>
+        {pageNum}
+      </div>
     </div>
   );
 }
 
-// ── Zine Portal ───────────────────────────────────────────────────────────────
+function ZinePanelBlank({ pageNum }) {
+  return (
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '11mm 12mm', boxSizing: 'border-box' }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#e8e8e8' }}>{pageNum}</span>
+    </div>
+  );
+}
+
+// ── Zine Portal — saddle-stitch imposition ────────────────────────────────────
+//    Sheet k front: [page N-2k+2 | page 2k-1]   (pages 1-indexed)
+//    Sheet k back:  [page 2k     | page N-2k+1]
+//    Print double-sided, flip on short edge, fold, staple.
 function ZinePortal({ digest, t }) {
   const containerRef = useRef(null);
   if (!containerRef.current) {
@@ -306,15 +348,48 @@ function ZinePortal({ digest, t }) {
     containerRef.current = el;
   }
 
-  return createPortal(
-    <div style={{ width: '297mm' }}>
-      <ZineCover digest={digest} t={t} />
-      {digest.newsletters.map((nl, i) => (
-        <ZineArticle key={nl.id || i} nl={nl} index={i} total={digest.newsletters.length} t={t} />
-      ))}
-    </div>,
-    containerRef.current
-  );
+  // Build reading-order panel list
+  const panels = [
+    <ZinePanelCoverLeft  key="cl" digest={digest} t={t} />,
+    <ZinePanelCoverRight key="cr" digest={digest} t={t} />,
+  ];
+  digest.newsletters.forEach((nl, ai) => {
+    paginateArticle(nl).forEach((pg, pi) => {
+      const pageNum = panels.length + 1;
+      panels.push(
+        <ZinePanelArticle key={`${ai}-${pi}`}
+          nl={nl} index={ai} total={digest.newsletters.length}
+          t={t} lead={pg.lead} body={pg.body} isFirst={pg.isFirst}
+          pageNum={pageNum} />
+      );
+    });
+  });
+  while (panels.length % 4 !== 0)
+    panels.push(<ZinePanelBlank key={`b${panels.length}`} pageNum={panels.length + 1} />);
+
+  const N = panels.length;
+  const sheets = [];
+  for (let k = 1; k <= N / 4; k++) {
+    const fl = panels[N - 2 * k + 1];
+    const fr = panels[2 * k - 2];
+    const bl = panels[2 * k - 1];
+    const br = panels[N - 2 * k];
+    const last = k === N / 4;
+    sheets.push(
+      <div key={`${k}f`} style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: 'page', pageBreakAfter: 'always' }}>
+        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{fl}</div>
+        <div style={{ overflow: 'hidden' }}>{fr}</div>
+      </div>
+    );
+    sheets.push(
+      <div key={`${k}b`} style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: last ? 'avoid' : 'page', pageBreakAfter: last ? 'avoid' : 'always' }}>
+        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{bl}</div>
+        <div style={{ overflow: 'hidden' }}>{br}</div>
+      </div>
+    );
+  }
+
+  return createPortal(<div>{sheets}</div>, containerRef.current);
 }
 
 // ── Mobile reader — reflows content full-width, readable type ────────────────
@@ -419,10 +494,7 @@ export default function DigestView() {
           font-family: 'Ecofont Vera Sans';
           src: url('https://fonts.cdnfonts.com/css/ecofont-vera-sans') format('truetype');
         }
-        /* Cover gets zero margin (full bleed); all other pages get safe margins */
-        @page { size: 297mm 210mm; margin: 12mm 14mm; }
-        @page cover-page { size: 297mm 210mm; margin: 0; }
-        .zine-cover { page: cover-page; }
+        @page { size: 297mm 210mm; margin: 0; }
         #carta-zine-container { display: none; }
         @media print {
           body > #root { display: none !important; }
