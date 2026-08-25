@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
@@ -216,6 +216,154 @@ function PrintPortal({ digest, t }) {
   );
 }
 
+// ── Zine Cover Panel (A5 portrait: 148.5mm × 210mm) ─────────────────────────
+function ZineCoverPanel({ digest, t }) {
+  const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const isEco = t === TEMPLATES.eco;
+
+  return (
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: t.coverBg, color: t.coverFg, padding: '6px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, borderBottom: isEco ? '1px solid #ccc' : 'none' }}>
+        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>Carta</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.1em', color: isEco ? '#999' : '#888' }}>Zine Edition</span>
+      </div>
+
+      <div style={{ flex: 1, padding: '18px 18px 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 10 }}>{date}</div>
+
+        <div style={{ borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 10, marginBottom: 14 }}>
+          <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 32 : 46, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.9, color: t.headlineFg }}>
+            The<br />Weekend<br />Digest
+          </div>
+        </div>
+
+        <div style={{ borderTop: isEco ? '1px solid #ccc' : '2px solid #000', flex: 1, overflow: 'hidden' }}>
+          <div style={{ background: isEco ? 'transparent' : '#000', color: isEco ? t.metaFg : '#fff', padding: isEco ? '4px 0' : '4px 0 4px 10px', fontFamily: 'var(--font-sign)', fontSize: 8, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+            Contents
+          </div>
+          {digest.newsletters.map((nl, i) => (
+            <div key={nl.id} style={{ display: 'grid', gridTemplateColumns: '18px 1fr', gap: 8, padding: '4px 0', borderBottom: `1px solid ${t.ruleColor}`, alignItems: 'baseline' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#aaa' }}>{String(i + 1).padStart(2, '0')}</span>
+              <div style={{ fontFamily: t.headlineFamily, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {nl.subject}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ borderTop: isEco ? '1px solid #ccc' : '2px solid #000', padding: '5px 14px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#aaa', letterSpacing: '0.1em' }}>{digest.newsletters.length} ISSUES</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#aaa', letterSpacing: '0.1em' }}>CARTA · ZINE</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Zine Article Panel (A5 portrait: 148.5mm × 210mm) ────────────────────────
+function ZineArticlePanel({ nl, index, total, t }) {
+  const paras = getParas(nl.bodyText);
+  const lead = paras[0] || '';
+  const body = paras.slice(1, 4);
+  const wc = paras.join(' ').split(/\s+/).length;
+  const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  const isEco = t === TEMPLATES.eco;
+
+  return (
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: t.headerBg, color: t.headerFg, padding: '6px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, borderBottom: isEco ? '1px solid #ccc' : 'none' }}>
+        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 8, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Carta · Zine</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: isEco ? '#999' : '#888', letterSpacing: '0.1em' }}>
+          {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        </span>
+      </div>
+
+      <div style={{ flex: 1, padding: '10px 14px 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ breakInside: 'avoid', flexShrink: 0 }}>
+          <div style={{ marginBottom: 7 }}>
+            <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.12em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '1px 5px', color: t.tagFg }}>
+              {nl.sender}
+            </span>
+          </div>
+
+          <div style={{ borderTop: isEco ? '1px solid #ccc' : '2px solid #000', paddingTop: 8, marginBottom: 8 }}>
+            <h2 style={{ fontFamily: t.headlineFamily, fontSize: 20, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0 }}>
+              {nl.subject}
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 7, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: 8, marginBottom: 8, borderBottom: `1px solid ${t.ruleColor}` }}>
+            <span>{date}</span><span>·</span><span>{wc.toLocaleString()} words</span>
+          </div>
+        </div>
+
+        {lead && (
+          <p style={{ fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.6, fontWeight: 500, color: t.bodyFg, marginBottom: 8, flexShrink: 0 }}>
+            {lead}
+          </p>
+        )}
+
+        <div style={{ overflow: 'hidden' }}>
+          {body.map((p, i) => (
+            <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9, lineHeight: 1.65, color: t.bodyFg, marginBottom: 7 }}>
+              {p}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ borderTop: `1px solid ${t.ruleColor}`, padding: '5px 14px', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 7, color: '#aaa', letterSpacing: '0.1em', flexShrink: 0 }}>
+        <span>{nl.sender}</span>
+        <span>{wc.toLocaleString()} words</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Zine Portal — pairs panels 2-per-sheet on A4 landscape ───────────────────
+function ZinePortal({ digest, t }) {
+  const containerRef = useRef(null);
+  if (!containerRef.current) {
+    let el = document.getElementById('carta-zine-container');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'carta-zine-container';
+      document.body.appendChild(el);
+    }
+    containerRef.current = el;
+  }
+
+  const panels = [
+    <ZineCoverPanel key="cover" digest={digest} t={t} />,
+    ...digest.newsletters.map((nl, i) => (
+      <ZineArticlePanel key={nl.id || i} nl={nl} index={i} total={digest.newsletters.length} t={t} />
+    )),
+  ];
+
+  const sheets = [];
+  for (let i = 0; i < panels.length; i += 2) {
+    sheets.push(panels.slice(i, i + 2));
+  }
+
+  return createPortal(
+    <div>
+      {sheets.map(([left, right], i) => (
+        <div key={i} className="zine-print-sheet" style={{ width: '297mm', height: '210mm', display: 'flex', background: '#fff' }}>
+          <div style={{ width: '148.5mm', height: '210mm', flexShrink: 0, borderRight: '0.5pt solid #ccc', overflow: 'hidden' }}>
+            {left}
+          </div>
+          <div style={{ width: '148.5mm', height: '210mm', flexShrink: 0, overflow: 'hidden' }}>
+            {right || <div style={{ width: '100%', height: '100%', background: '#f4f3f1' }} />}
+          </div>
+        </div>
+      ))}
+    </div>,
+    containerRef.current
+  );
+}
+
 // ── Mobile reader — reflows content full-width, readable type ────────────────
 function MobileReader({ digest, t }) {
   const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
@@ -293,6 +441,7 @@ export default function DigestView() {
   const isMobile = useMobile();
 
   const [searchParams] = useSearchParams();
+  const [printMode, setPrintMode] = useState('portrait');
   const digests = JSON.parse(localStorage.getItem('carta-digests') || '[]');
   const digest = digests.find(d => String(d.id) === id);
 
@@ -304,6 +453,11 @@ export default function DigestView() {
 
   const savedTemplate = localStorage.getItem('carta-template') || 'standard';
   const t = TEMPLATES[savedTemplate] || TEMPLATES.standard;
+
+  function handlePrint(mode) {
+    setPrintMode(mode);
+    setTimeout(() => window.print(), 150);
+  }
 
   if (!digest) return (
     <div style={{ padding: 40, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey-mid)' }}>
@@ -318,13 +472,21 @@ export default function DigestView() {
           font-family: 'Ecofont Vera Sans';
           src: url('https://fonts.cdnfonts.com/css/ecofont-vera-sans') format('truetype');
         }
+        @page { size: ${printMode === 'zine' ? '297mm 210mm' : '210mm 297mm'}; margin: 0; }
+        #carta-print-container { display: none; }
+        #carta-zine-container  { display: none; }
         @media print {
           body > #root { display: none !important; }
-          #carta-print-container { display: block !important; }
-          #carta-print-container .digest-print-page { page-break-after: always; break-after: page; }
-          #carta-print-container .digest-print-page:last-child { page-break-after: avoid; break-after: avoid; }
+          ${printMode === 'zine' ? `
+            #carta-zine-container { display: block !important; }
+            .zine-print-sheet { page-break-after: always; break-after: page; }
+            .zine-print-sheet:last-child { page-break-after: avoid; break-after: avoid; }
+          ` : `
+            #carta-print-container { display: block !important; }
+            #carta-print-container .digest-print-page { page-break-after: always; break-after: page; }
+            #carta-print-container .digest-print-page:last-child { page-break-after: avoid; break-after: avoid; }
+          `}
         }
-        #carta-print-container { display: none; }
       `}</style>
 
       {/* Screen nav */}
@@ -340,7 +502,8 @@ export default function DigestView() {
             Template: {t.name}
           </div>
         )}
-        <Btn primary onClick={() => window.print()}>Print</Btn>
+        <Btn onClick={() => handlePrint('zine')}>Print Zine</Btn>
+        <Btn primary onClick={() => handlePrint('portrait')}>Print</Btn>
       </div>
 
       {/* Screen view */}
@@ -355,7 +518,10 @@ export default function DigestView() {
         </div>
       )}
 
-      <PrintPortal digest={digest} t={t} />
+      {printMode === 'zine'
+        ? <ZinePortal digest={digest} t={t} />
+        : <PrintPortal digest={digest} t={t} />
+      }
     </>
   );
 }

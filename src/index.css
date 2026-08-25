@@ -29,12 +29,6 @@ button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 a { text-decoration: none; color: inherit; }
 
-/* ── Print: fix physical page size/margins so a 297mm box == 1 sheet ── */
-@page {
-  size: 210mm 297mm;
-  margin: 0;
-}
-
 /* ── Print: only show digest pages ─────────────────────────────────── */
 @media print {
   /* Hide everything by default */
