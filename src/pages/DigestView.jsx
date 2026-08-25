@@ -584,9 +584,9 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
           </div>
         </div>
       ) : (
-        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', paddingBottom: 3, marginBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{nl.sender}</span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#ccc' }}>{pageNum}</span>
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', gap: 10, paddingBottom: 3, marginBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>{nl.sender}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'right', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nl.subject}</span>
         </div>
       )}
 
