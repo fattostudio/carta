@@ -379,9 +379,7 @@ function paginateArticle(nl) {
 
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
 function ZinePanelCoverLeft({ digest, t }) {
-  const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const week = weekLabel(digest.week);
   const isEco = t === TEMPLATES.eco;
   return (
     <div style={{ width: '148.5mm', height: '210mm', background: isEco ? '#fff' : t.coverBg, color: isEco ? '#111' : '#fff', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box', borderRight: `0.5pt solid ${isEco ? '#ccc' : '#333'}`, overflow: 'hidden' }}>
@@ -390,10 +388,10 @@ function ZinePanelCoverLeft({ digest, t }) {
       </div>
       <div>
         <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 50 : 56, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, borderTop: isEco ? '1pt solid #ccc' : '2pt solid rgba(255,255,255,0.2)', paddingTop: 12, marginBottom: 12 }}>
-          The<br />Week&shy;end<br />Digest
+          CARTA
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.1em', textTransform: 'uppercase', color: isEco ? '#aaa' : 'rgba(255,255,255,0.45)' }}>
-          {date}
+          {week}
         </div>
       </div>
     </div>
@@ -408,15 +406,21 @@ function ZinePanelCoverRight({ digest, t }) {
         Contents
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {digest.newsletters.map((nl, i) => (
-          <div key={nl.id || i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderBottom: `0.5pt solid ${t.ruleColor}`, alignItems: 'baseline' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
-            <div>
-              <div style={{ fontFamily: t.headlineFamily, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: t.metaFg, marginTop: 2 }}>{nl.sender}</div>
+        {digest.newsletters.map((nl, i) => {
+          const teaser = getTeaser(nl.bodyText, 100);
+          return (
+            <div key={nl.id || i} style={{ padding: '5px 0', borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginBottom: teaser ? 2 : 0 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{nl.sender}</div>
+                  <div style={{ fontFamily: t.headlineFamily, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
+                </div>
+              </div>
+              {teaser && <div style={{ paddingLeft: 16, fontFamily: t.fontFamily, fontSize: 7, lineHeight: 1.5, color: t.metaFg }}>{teaser}</div>}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div style={{ borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 7, fontFamily: 'var(--font-mono)', fontSize: 7, color: '#bbb', letterSpacing: '0.1em' }}>
         {digest.newsletters.length} issues · fold & staple on short edge
@@ -548,22 +552,20 @@ function ZinePortal({ digest, t }) {
 
 // ── Mobile reader — reflows content full-width, readable type ────────────────
 function MobileReader({ digest, t }) {
-  const date = new Date(digest.builtAt).toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const week = weekLabel(digest.week);
 
   return (
     <div style={{ background: '#fff' }}>
       {/* Cover */}
       <div style={{ padding: '28px 20px 24px', borderBottom: '2px solid #000' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#888', marginBottom: 16 }}>
-          {date}
+        <div style={{ fontFamily: 'var(--font-sign)', fontSize: 44, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.92, color: '#000', marginBottom: 8 }}>
+          CARTA
         </div>
-        <div style={{ fontFamily: 'var(--font-sign)', fontSize: 44, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.92, color: '#000', marginBottom: 20 }}>
-          The Weekend Digest
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#888', marginBottom: 16 }}>
+          {week}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          {digest.newsletters.length} issues · Carta label
+          {digest.newsletters.length} issues
         </div>
       </div>
 
@@ -628,7 +630,7 @@ export default function DigestView() {
 
   useEffect(() => {
     if (searchParams.get('print') === '1') {
-      setTimeout(() => window.print(), 800);
+      setTimeout(() => printPortrait(), 800);
     }
   }, []);
 
@@ -636,24 +638,35 @@ export default function DigestView() {
   const design = getDesign();
   const t = mergeDesign(TEMPLATES[savedTemplate] || TEMPLATES.standard, design);
 
-  function printPortrait() {
+  function printWithMode(mode, pageRule) {
+    document.getElementById('carta-print-page-rule')?.remove();
     const s = document.createElement('style');
-    s.textContent = `@page { size: ${getPaperSize(design.paperSize, design.orientation)}; margin: 16mm 18mm; }`;
+    s.id = 'carta-print-page-rule';
+    s.textContent = pageRule;
     document.head.appendChild(s);
-    document.body.classList.add('carta-print-portrait');
+    document.body.classList.add(mode);
+
+    const cleanup = () => {
+      document.body.classList.remove(mode);
+      s.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
-    document.head.removeChild(s);
-    document.body.classList.remove('carta-print-portrait');
+  }
+
+  function printPortrait() {
+    printWithMode(
+      'carta-print-portrait',
+      `@page { size: ${getPaperSize(design.paperSize, design.orientation)}; margin: 16mm 18mm; }`
+    );
   }
 
   function printZine() {
-    const s = document.createElement('style');
-    s.textContent = `@page { size: 297mm 210mm; margin: 0; }`;
-    document.head.appendChild(s);
-    document.body.classList.add('carta-print-zine');
-    window.print();
-    document.head.removeChild(s);
-    document.body.classList.remove('carta-print-zine');
+    printWithMode(
+      'carta-print-zine',
+      `@page { size: 297mm 210mm; margin: 0; }`
+    );
   }
 
   if (!digest) return (
