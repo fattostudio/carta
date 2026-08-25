@@ -341,10 +341,10 @@ function PortraitPortal({ digest, t, design }) {
 }
 
 // ── Zine pagination ───────────────────────────────────────────────────────────
-// A5 panel (148.5×210mm), 11mm padding, 2 cols at 8pt/1.75lh ≈ 500w first, 680w cont.
-// Set below capacity so paragraphs aren't clipped mid-text by overflow:hidden.
-const ZINE_FIRST_WORDS = 420;
-const ZINE_CONT_WORDS  = 600;
+// A5 panel (148.5×210mm), 8mm padding, 2 cols at 9.5px/1.55lh.
+// Capacity ~430w (first, with header) and ~530w (continuation).
+const ZINE_FIRST_WORDS = 380;
+const ZINE_CONT_WORDS  = 480;
 
 function paginateArticle(nl) {
   const paras  = getParas(nl.bodyText);
@@ -419,27 +419,27 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
   const isEco = t === TEMPLATES.eco;
 
   return (
-    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', padding: '11mm 12mm', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', flexDirection: 'column', padding: '8mm 10mm', boxSizing: 'border-box', overflow: 'hidden' }}>
       {isFirst ? (
-        <div style={{ flexShrink: 0, marginBottom: 7 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 5, marginBottom: 6, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.metaFg }}>Carta Zine</span>
+        <div style={{ flexShrink: 0, marginBottom: 5 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 3, marginBottom: 4, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.metaFg }}>Carta</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg }}>{String(index + 1).padStart(2, '0')}/{String(total).padStart(2, '0')}</span>
           </div>
-          <div style={{ marginBottom: 5 }}>
+          <div style={{ marginBottom: 4 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, border: `0.5pt solid ${t.tagBorder}`, padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.1em', color: t.tagFg }}>
               {nl.sender}
             </span>
           </div>
-          <h2 style={{ fontFamily: t.headlineFamily, fontSize: 19, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0, borderTop: isEco ? '0.5pt solid #ccc' : '2pt solid #000', paddingTop: 6, marginBottom: 6 }}>
+          <h2 style={{ fontFamily: t.headlineFamily, fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0, borderTop: isEco ? '0.5pt solid #ccc' : '2pt solid #000', paddingTop: 5, marginBottom: 5 }}>
             {nl.subject}
           </h2>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase', paddingBottom: 7, marginBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
-            {date}{rt ? ` · ${rt} min` : ''} · {wc.toLocaleString()} words
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.08em', textTransform: 'uppercase', paddingBottom: 5, marginBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+            {date}{rt ? ` · ${rt} min` : ''}
           </div>
         </div>
       ) : (
-        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', paddingBottom: 5, marginBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', paddingBottom: 3, marginBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: t.metaFg, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{nl.sender}</span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#ccc' }}>{pageNum}</span>
         </div>
@@ -447,18 +447,18 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
 
       <div style={{ flex: 1, overflow: 'hidden', columns: 2, columnGap: '4mm', columnRule: `0.5pt solid ${t.ruleColor}` }}>
         {lead && isFirst && (
-          <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 9, lineHeight: 1.7, fontWeight: 500, color: t.bodyFg, marginBottom: 7, paddingBottom: 7, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
+          <p style={{ columnSpan: 'all', fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.55, fontWeight: 500, color: t.bodyFg, marginBottom: 5, paddingBottom: 5, borderBottom: `0.5pt solid ${t.ruleColor}` }}>
             {lead}
           </p>
         )}
         {body.map((p, i) => (
-          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 8, lineHeight: 1.75, color: t.bodyFg, marginBottom: 5, breakInside: 'avoid' }}>
+          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9.5, lineHeight: 1.55, color: t.bodyFg, marginBottom: 4, breakInside: 'avoid' }}>
             {p}
           </p>
         ))}
       </div>
 
-      <div style={{ flexShrink: 0, borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 4, marginTop: 4, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#ccc' }}>
+      <div style={{ flexShrink: 0, borderTop: `0.5pt solid ${t.ruleColor}`, paddingTop: 3, marginTop: 3, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 6, color: '#ccc' }}>
         {pageNum}
       </div>
     </div>
