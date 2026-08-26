@@ -8,12 +8,15 @@ import { getDesign } from '../store';
 // ── Text cleaning ─────────────────────────────────────────────────────────────
 function cleanBody(raw = '') {
   return raw
-    // Drop embedded images/captions/tables wholesale (tag + inner content),
-    // not just the surrounding markup — a figcaption's text is a photo
-    // credit, not article prose.
+    // Drop embedded images/captions/tables/styles/scripts wholesale (tag +
+    // inner content), not just the surrounding markup — a figcaption's text
+    // is a photo credit, not article prose, and a <style> block's CSS rules
+    // are never meant to be read as text at all.
     .replace(/<figure[\s\S]*?<\/figure>/gi, '')
     .replace(/<table[\s\S]*?<\/table>/gi, '')
     .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<(hr|img|br)\b[^>]*\/?>/gi, '')
     // Markdown links: keep the visible label, drop the URL, e.g.
     // "[here](https://x.com)" -> "here"
