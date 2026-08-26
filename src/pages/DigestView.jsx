@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
-import { getDesign, weekLabel } from '../store';
+import { getDesign } from '../store';
 
 // ── Text cleaning ─────────────────────────────────────────────────────────────
 function cleanBody(raw = '') {
@@ -118,7 +118,7 @@ function getTeaser(bodyText, maxChars = 140) {
 
 // ── Cover Page ────────────────────────────────────────────────────────────────
 function CoverPage({ digest, t }) {
-  const week = weekLabel(digest.week);
+  const week = digest.week;
   const isEco = t === TEMPLATES.eco;
   const rule = isEco ? '1px solid #ccc' : '2px solid #000';
 
@@ -239,7 +239,7 @@ function ArticlePage({ nl, index, total, t }) {
 
 // ── Portrait Print Portal ─────────────────────────────────────────────────────
 function PrintCoverPage({ digest, t }) {
-  const week = weekLabel(digest.week);
+  const week = digest.week;
   const isEco = t === TEMPLATES.eco;
   const rule = isEco ? '1pt solid #ccc' : '2pt solid #000';
 
@@ -519,7 +519,7 @@ function measureZinePanels(digest, t) {
 
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
 function ZinePanelCover({ digest, t }) {
-  const week = weekLabel(digest.week);
+  const week = digest.week;
   return (
     <div style={{ width: '148.5mm', height: '210mm', background: '#fff', color: '#111', display: 'flex', flexDirection: 'column', padding: '14px 18px', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>
@@ -688,7 +688,7 @@ function ZinePortal({ digest, t }) {
 
 // ── Mobile reader — reflows content full-width, readable type ────────────────
 function MobileReader({ digest, t }) {
-  const week = weekLabel(digest.week);
+  const week = digest.week;
 
   return (
     <div style={{ background: '#fff' }}>
