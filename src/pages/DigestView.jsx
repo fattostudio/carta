@@ -460,7 +460,7 @@ function measureZinePanels(digest, t) {
       const paraEls = [];
       for (const text of rem) {
         const p = document.createElement('p');
-        p.style.cssText = `font-family:${t.fontFamily};font-size:9.5px;line-height:1.55;color:${t.bodyFg};margin:0 0 4px`;
+        p.style.cssText = `font-family:${t.fontFamily};font-size:9.5px;line-height:1.55;color:${t.bodyFg};margin:0;text-indent:1em`;
         p.textContent = text;
         bd.appendChild(p);
         paraEls.push(p);
@@ -625,7 +625,7 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
           </p>
         )}
         {body.map((p, i) => (
-          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9.5, lineHeight: 1.55, color: t.bodyFg, marginBottom: 4 }}>
+          <p key={i} style={{ fontFamily: t.fontFamily, fontSize: 9.5, lineHeight: 1.55, color: t.bodyFg, margin: 0, textIndent: '1em' }}>
             {p}
           </p>
         ))}
