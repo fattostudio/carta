@@ -122,127 +122,6 @@ function getTeaser(bodyText, maxChars = 140) {
   return sentence.length > maxChars ? sentence.slice(0, maxChars).trimEnd() + '…' : sentence;
 }
 
-// ── Cover Page ────────────────────────────────────────────────────────────────
-function CoverPage({ digest, t }) {
-  const week = digest.week;
-  const isEco = t === TEMPLATES.eco;
-  const rule = isEco ? '1px solid #ccc' : '2px solid #000';
-
-  return (
-    <div className="digest-page" style={{ width: '210mm', minHeight: '297mm', background: '#fff', border: rule, marginBottom: 24, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: t.coverBg, color: t.coverFg, padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isEco ? '1px solid #ccc' : 'none' }}>
-        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 12, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' }}>Carta</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: isEco ? '#999' : '#888' }}>Newsletter Digest</span>
-      </div>
-
-      <div style={{ flex: 1, padding: '28px 32px 0', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 12, marginBottom: 6 }}>
-          <div style={{ fontFamily: t.headlineFamily, fontSize: isEco ? 66 : 84, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'uppercase', lineHeight: 0.88, color: t.headlineFg }}>
-            CARTA
-          </div>
-        </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.metaFg, marginBottom: 20 }}>{week}</div>
-
-        <div style={{ borderTop: isEco ? '1px solid #ccc' : '2px solid #000' }}>
-          <div style={{ background: isEco ? 'transparent' : '#000', color: isEco ? t.metaFg : '#fff', padding: isEco ? '7px 0' : '6px 0 6px 12px', fontFamily: 'var(--font-sign)', fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', borderBottom: isEco ? '1px solid #ccc' : 'none' }}>
-            Contents
-          </div>
-          {digest.newsletters.map((nl, i) => {
-            const teaser = getTeaser(nl.bodyText);
-            return (
-              <div key={nl.id || i} style={{ padding: '9px 0', borderBottom: `1px solid ${t.ruleColor}` }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', marginBottom: teaser ? 3 : 0 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.metaFg }}>{nl.sender}</div>
-                    <div style={{ fontFamily: t.headlineFamily, fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.2, color: t.headlineFg }}>{nl.subject}</div>
-                  </div>
-                </div>
-                {teaser && <div style={{ paddingLeft: 22, fontFamily: t.fontFamily, fontSize: 10, lineHeight: 1.6, color: t.metaFg }}>{teaser}</div>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div style={{ borderTop: isEco ? '1px solid #ccc' : '2px solid #000', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>{digest.newsletters.length} ISSUES · CARTA LABEL</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>PRINT EDITION</span>
-      </div>
-    </div>
-  );
-}
-
-// ── Article Page ──────────────────────────────────────────────────────────────
-function ArticlePage({ nl, index, total, t }) {
-  const paras = getParas(nl.bodyText);
-  const lead = paras[0] || '';
-  const body = paras.slice(1);
-  const wc = paras.join(' ').split(/\s+/).length;
-  const rt = Math.max(1, Math.round(wc / 200));
-  const date = nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
-  const source = domainFromEmail(nl.senderEmail);
-  const isEco = t === TEMPLATES.eco;
-
-  return (
-    <div className="digest-page" style={{ width: '210mm', minHeight: '297mm', background: '#fff', border: isEco ? '1px solid #ccc' : '2px solid #000', marginBottom: 24, display: 'flex', flexDirection: 'column' }}>
-      <div style={{
-        background: t.headerBg, color: t.headerFg,
-        padding: '8px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: isEco ? '1px solid #ccc' : 'none',
-      }}>
-        <span style={{ fontFamily: 'var(--font-sign)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          Carta
-        </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: isEco ? '#999' : '#888', letterSpacing: '0.1em' }}>
-          {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-        </span>
-      </div>
-
-      <div style={{ flex: 1, padding: t.margins, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ breakInside: 'avoid' }}>
-          <div style={{ marginBottom: 12 }}>
-            <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', border: `1px solid ${t.tagBorder}`, padding: '2px 8px', color: t.tagFg }}>
-              {nl.sender}
-            </span>
-          </div>
-
-          <div style={{ borderTop: isEco ? '1px solid #ccc' : '3px solid #000', paddingTop: 12, marginBottom: 12 }}>
-            <h2 style={{ fontFamily: t.headlineFamily, fontSize: t.fontSize.headline, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.95, color: t.headlineFg, margin: 0 }}>
-              {nl.subject}
-            </h2>
-          </div>
-
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: t.fontSize.meta, color: t.metaFg, letterSpacing: '0.12em', textTransform: 'uppercase', paddingBottom: 16, marginBottom: 18, borderBottom: `1px solid ${t.ruleColor}` }}>
-            <span>{date}</span><span>·</span>
-            <span>{rt} min read</span>
-            {source && <><span>·</span><span>{source}</span></>}
-          </div>
-        </div>
-
-        {lead && (
-          <p style={{ fontFamily: t.fontFamily, fontSize: t.fontSize.lead, lineHeight: 1.75, fontWeight: 500, color: t.bodyFg, marginBottom: 18 }}>
-            {lead}
-          </p>
-        )}
-
-        <div style={{ columns: body.length > 8 ? 2 : 1, columnGap: 28, columnRule: body.length > 8 ? `1px solid ${t.ruleColor}` : 'none' }}>
-          {body.map((p, i) => (
-            <p key={i} style={{ fontFamily: t.fontFamily, fontSize: t.fontSize.body, lineHeight: 1.8, color: t.bodyFg, marginBottom: 12, breakInside: 'avoid' }}>
-              {p}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ borderTop: `1px solid ${t.ruleColor}`, padding: '8px 24px', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 9, color: '#aaa', letterSpacing: '0.1em' }}>
-        <span>{nl.sender}</span>
-        <span>{wc.toLocaleString()} words</span>
-      </div>
-    </div>
-  );
-}
-
 // ── Portrait Print Portal ─────────────────────────────────────────────────────
 function PrintCoverPage({ digest, t }) {
   const week = digest.week;
@@ -725,12 +604,12 @@ function ZinePortal({ digest, t }) {
   return createPortal(<div>{sheets}</div>, containerRef.current);
 }
 
-// ── Mobile reader — reflows content full-width, readable type ────────────────
-function MobileReader({ digest, t }) {
+// ── Digest reader — single-column, responsive screen view (desktop + mobile) ─
+function DigestReader({ digest, t }) {
   const week = digest.week;
 
   return (
-    <div style={{ background: '#fff' }}>
+    <div style={{ background: '#fff', maxWidth: 720, margin: '0 auto' }}>
       {/* Cover */}
       <div style={{ padding: '28px 20px 24px', borderBottom: '2px solid #000' }}>
         <div style={{ fontFamily: 'var(--font-sign)', fontSize: 44, fontWeight: 800, letterSpacing: '-0.01em', textTransform: 'uppercase', lineHeight: 0.92, color: '#000', marginBottom: 8 }}>
@@ -886,17 +765,8 @@ export default function DigestView() {
         <Btn primary onClick={printDigest}>Print</Btn>
       </div>
 
-      {/* Screen view */}
-      {isMobile ? (
-        <MobileReader digest={digest} t={t} />
-      ) : (
-        <div className="digest-screen-wrap" style={{ background: 'var(--grey-bg)', padding: '32px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden' }}>
-          <CoverPage digest={digest} t={t} />
-          {digest.newsletters.map((nl, i) => (
-            <ArticlePage key={nl.id} nl={nl} index={i} total={digest.newsletters.length} t={t} />
-          ))}
-        </div>
-      )}
+      {/* Screen view — single column, responsive at every width */}
+      <DigestReader digest={digest} t={t} />
 
       <PortraitPortal digest={digest} t={t} design={design} />
       <ZinePortal digest={digest} t={t} />
