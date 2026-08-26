@@ -610,10 +610,14 @@ function ZinePanelArticle({ nl, index, total, t, lead, body, isFirst, pageNum })
   );
 }
 
-function ZinePanelBlank({ pageNum }) {
+function ZinePanelBlank({ pageNum, isBackCover }) {
   return (
     <div style={{ width: '148.5mm', height: '210mm', background: '#fff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '11mm 12mm', boxSizing: 'border-box' }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#e8e8e8' }}>{pageNum}</span>
+      {isBackCover ? (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#bbb' }}>made with carta.fatto.studio</span>
+      ) : (
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, color: '#e8e8e8' }}>{pageNum}</span>
+      )}
     </div>
   );
 }
@@ -660,6 +664,10 @@ function ZinePortal({ digest, t }) {
   do {
     panels.push(<ZinePanelBlank key={`b${panels.length}`} pageNum="" />);
   } while (panels.length % 4 !== 0);
+  // Last page in reading order = physical outside back cover
+  panels[panels.length - 1] = (
+    <ZinePanelBlank key={panels[panels.length - 1].key} pageNum="" isBackCover />
+  );
 
   const N = panels.length;
   const sheets = [];
