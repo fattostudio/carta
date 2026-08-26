@@ -23,6 +23,9 @@ function cleanBody(raw = '') {
     // whitespace is restricted to the same line so this can't eat the
     // blank-line paragraph separator that follows.
     .replace(/\[([^\]\n]*)\]\([ \t]*$/gm, '$1')
+    // Link cut off even earlier — before any label survived, just a bare
+    // "[" dangling at the end of a line/sentence.
+    .replace(/\[[ \t]*$/gm, '')
     // Stray markdown emphasis asterisks
     .replace(/\*+/g, '')
     // Any remaining HTML tags (inline formatting etc.) — keep their text
