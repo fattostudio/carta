@@ -518,8 +518,31 @@ function measureZinePanels(digest, t) {
 }
 
 // ── A5 panel components (148.5mm × 210mm each) ───────────────────────────────
+const MM_TO_PX = 96 / 25.4;
+const COVER_PANEL_WIDTH_PX = 148.5 * MM_TO_PX;
+
 function ZinePanelCover({ digest, t }) {
   const week = digest.week;
+  const [weekFontSize, setWeekFontSize] = useState(20);
+
+  useEffect(() => {
+    document.fonts.ready.then(() => {
+      // Measured via an off-screen probe (not the real, hidden-until-print
+      // panel) — an element inside a display:none ancestor always reports
+      // zero size, so the real node can't be measured directly here.
+      const baseSize = 20;
+      const probe = document.createElement('div');
+      probe.style.cssText = `position:absolute;left:-9999px;top:0;white-space:nowrap;line-height:1;font-family:var(--font-mono);font-weight:700;letter-spacing:-0.01em;text-transform:uppercase;font-size:${baseSize}px`;
+      probe.textContent = week;
+      document.body.appendChild(probe);
+      const naturalWidth = probe.getBoundingClientRect().width;
+      probe.remove();
+      if (!naturalWidth) return;
+      const targetWidth = COVER_PANEL_WIDTH_PX * 0.98;
+      setWeekFontSize(baseSize * (targetWidth / naturalWidth));
+    });
+  }, [week]);
+
   return (
     <div style={{ width: '148.5mm', height: '210mm', background: '#fff', color: '#111', display: 'flex', flexDirection: 'column', padding: '14px 18px', boxSizing: 'border-box', overflow: 'hidden' }}>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#999', marginBottom: 8 }}>
@@ -530,8 +553,10 @@ function ZinePanelCover({ digest, t }) {
           CARTA
         </div>
       </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 6.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: 10, paddingBottom: 8, borderBottom: '1pt solid #000' }}>
-        {week}
+      <div style={{ margin: '0 -18px', marginBottom: 10, paddingBottom: 8, borderBottom: '1pt solid #000', overflow: 'hidden' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: weekFontSize, fontWeight: 700, letterSpacing: '-0.01em', textTransform: 'uppercase', color: '#000', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: 1 }}>
+          {week}
+        </div>
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {digest.newsletters.map((nl, i) => {
