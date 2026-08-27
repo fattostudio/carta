@@ -66,6 +66,55 @@ export function decodeBody(payload) {
   return '';
 }
 
+// Headers worth pulling in a metadata scan: enough to identify the sender and
+// to decide whether a message is a real bulk newsletter.
+export const NEWSLETTER_HEADERS = ['From', 'Subject', 'Date', 'List-Id', 'List-Unsubscribe', 'List-Post'];
+
+// Gmail's auto-classified tabs where bulk mail lands. Primary (category:personal)
+// is deliberately excluded — it's mostly 1:1 mail and drags in false positives.
+const NEWSLETTER_CATEGORIES = ['updates', 'promotions', 'forums'];
+
+// Turn an ISO string / epoch / Date into Gmail's after: date form (YYYY/M/D).
+export function formatAfter(since) {
+  if (!since) return '';
+  const d = new Date(since);
+  if (isNaN(d)) return '';
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// Build the Gmail search query for a newsletter scan. Precedence:
+//   label      -> label:<label>            (explicit power-user / legacy override)
+//   allowlist  -> from:(a@x OR b@y ...)     (steady state once senders are reviewed)
+//   neither    -> category:updates/promotions/forums  (first-run auto-detect)
+export function buildNewsletterQuery({ after, allowlist, label } = {}) {
+  const clauses = [];
+  if (label) {
+    clauses.push(`label:${label}`);
+  } else if (allowlist && allowlist.length) {
+    clauses.push(`from:(${allowlist.map(e => e.trim()).filter(Boolean).join(' OR ')})`);
+  } else {
+    clauses.push(`(${NEWSLETTER_CATEGORIES.map(c => `category:${c}`).join(' OR ')})`);
+  }
+  const afterStr = typeof after === 'string' && after.includes('/') ? after : formatAfter(after);
+  if (afterStr) clauses.push(`after:${afterStr}`);
+  return clauses.join(' ');
+}
+
+// A category scan returns candidates, not confirmed newsletters — those still
+// need the List-header check. A label or allowlist query is already trusted.
+export function needsListHeaderFilter({ allowlist, label } = {}) {
+  return !label && !(allowlist && allowlist.length);
+}
+
+// True when the message carries bulk-mail list headers (RFC 2369/2919) — the
+// strongest signal that it's a real newsletter rather than personal mail.
+export function hasListHeaders(headers = []) {
+  return headers.some(h => {
+    const n = h.name.toLowerCase();
+    return n === 'list-id' || n === 'list-unsubscribe' || n === 'list-post';
+  });
+}
+
 export function setCors(res) {
   const origin = getPublicBase();
   res.setHeader('Access-Control-Allow-Origin', origin);

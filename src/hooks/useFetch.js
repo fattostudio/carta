@@ -1,14 +1,17 @@
 import { fetchSince } from '../api';
 import {
   getDigests, saveDigests,
-  getDisabledSources,
+  getDisabledSources, getEnabledSourceEmails,
   getWeekKey, weekLabel,
   getLastFetch, saveLastFetch,
 } from '../store';
 
-export async function incrementalFetch({ label = 'Carta' } = {}) {
+// label: optional Gmail-label override. When no reviewed senders exist yet, both
+// label and allowlist are empty and the server auto-detects from the inbox.
+export async function incrementalFetch({ label } = {}) {
   const since = getLastFetch();
-  const newsletters = await fetchSince({ since, label });
+  const allowlist = getEnabledSourceEmails();
+  const newsletters = await fetchSince({ since, label, allowlist });
 
   if (!newsletters.length) return { added: 0, weekKey: getWeekKey() };
 

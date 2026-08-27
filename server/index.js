@@ -106,45 +106,68 @@ function getHeader(headers, name) {
   return headers?.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 }
 
+// Gmail tabs where bulk mail lands (Primary excluded — too many false positives).
+const NEWSLETTER_CATEGORIES = ['updates', 'promotions', 'forums'];
+
+// label -> label:<label>; allowlist -> from:(...); neither -> category scan.
+function buildNewsletterQuery({ afterStr, allowlist, label }) {
+  const clauses = [];
+  if (label) clauses.push(`label:${label}`);
+  else if (allowlist?.length) clauses.push(`from:(${allowlist.join(' OR ')})`);
+  else clauses.push(`(${NEWSLETTER_CATEGORIES.map(c => `category:${c}`).join(' OR ')})`);
+  if (afterStr) clauses.push(`after:${afterStr}`);
+  return clauses.join(' ');
+}
+
+// RFC 2369/2919 list headers — the signal that a message is a real newsletter.
+function hasListHeaders(headers = []) {
+  return headers.some(h => {
+    const n = h.name.toLowerCase();
+    return n === 'list-id' || n === 'list-unsubscribe' || n === 'list-post';
+  });
+}
+
+// Shared fetch used by /api/newsletters and /api/digest/build.
+async function collectNewsletters(gmail, { days, max, label, allowlist }) {
+  const since = new Date();
+  since.setDate(since.getDate() - Number(days));
+  const afterStr = `${since.getFullYear()}/${since.getMonth() + 1}/${since.getDate()}`;
+  const auto = !label && !(allowlist && allowlist.length);
+  const q = buildNewsletterQuery({ afterStr, allowlist, label });
+  const listMax = auto ? Math.min(Number(max) * 4, 200) : Number(max);
+
+  const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: listMax });
+  const messages = searchRes.data.messages || [];
+  if (!messages.length) return [];
+
+  const fetched = await Promise.all(messages.map(async ({ id }) => {
+    const msg = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
+    const { payload } = msg.data;
+    const headers = payload.headers;
+    if (auto && !hasListHeaders(headers)) return null;
+    return {
+      id,
+      subject: getHeader(headers, 'subject'),
+      sender: getHeader(headers, 'from').replace(/<.*>/, '').trim(),
+      senderEmail: (getHeader(headers, 'from').match(/<(.+)>/) || [])[1] || getHeader(headers, 'from'),
+      date: getHeader(headers, 'date'),
+      bodyText: decodeBody(payload),
+      hasImages: extractImages(payload).length > 0,
+    };
+  }));
+  return fetched.filter(Boolean).slice(0, Number(max));
+}
+
 // ── Fetch newsletters ────────────────────────────────────────────────────────
 app.get('/api/newsletters', async (req, res) => {
   if (!req.session.tokens) return res.status(401).json({ error: 'Not authenticated' });
 
-  const { days = 7, max = 10, label = 'Carta' } = req.query;
-  const since = new Date();
-  since.setDate(since.getDate() - Number(days));
-  const sinceStr = `${since.getFullYear()}/${since.getMonth() + 1}/${since.getDate()}`;
+  const { days = 7, max = 10, label, allowlist } = req.query;
+  const allow = allowlist ? allowlist.split(',').map(s => s.trim()).filter(Boolean) : [];
 
   try {
     const gmail = getGmail(req.session.tokens);
-
-    // Search for messages
-    const searchRes = await gmail.users.messages.list({
-      userId: 'me',
-      q: `label:${label} after:${sinceStr}`,
-      maxResults: Number(max),
-    });
-
-    const messages = searchRes.data.messages || [];
-    if (!messages.length) return res.json([]);
-
-    // Fetch each message
-    const newsletters = await Promise.all(messages.map(async ({ id }) => {
-      const msg = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
-      const { payload } = msg.data;
-      const headers = payload.headers;
-
-      return {
-        id,
-        subject: getHeader(headers, 'subject'),
-        sender: getHeader(headers, 'from').replace(/<.*>/, '').trim(),
-        senderEmail: (getHeader(headers, 'from').match(/<(.+)>/) || [])[1] || getHeader(headers, 'from'),
-        date: getHeader(headers, 'date'),
-        bodyText: decodeBody(payload),
-        hasImages: extractImages(payload).length > 0,
-      };
-    }));
-
+    const newsletters = await collectNewsletters(gmail, { days, max, label: label || undefined, allowlist: allow });
     res.json(newsletters);
   } catch (err) {
     console.error(err);
@@ -156,38 +179,14 @@ app.get('/api/newsletters', async (req, res) => {
 app.post('/api/digest/build', async (req, res) => {
   if (!req.session.tokens) return res.status(401).json({ error: 'Not authenticated' });
 
-  const { days = 7, max = 10, label = 'Carta' } = req.body;
-  const since = new Date();
-  since.setDate(since.getDate() - Number(days));
-  const sinceStr = `${since.getFullYear()}/${since.getMonth() + 1}/${since.getDate()}`;
+  const { days = 7, max = 10, label, allowlist } = req.body;
+  const allow = Array.isArray(allowlist)
+    ? allowlist
+    : (allowlist ? String(allowlist).split(',').map(s => s.trim()).filter(Boolean) : []);
 
   try {
     const gmail = getGmail(req.session.tokens);
-
-    const searchRes = await gmail.users.messages.list({
-      userId: 'me',
-      q: `label:${label} after:${sinceStr}`,
-      maxResults: Number(max),
-    });
-
-    const messages = searchRes.data.messages || [];
-    if (!messages.length) return res.json({ newsletters: [] });
-
-    const newsletters = await Promise.all(messages.map(async ({ id }) => {
-      const msg = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
-      const { payload } = msg.data;
-      const headers = payload.headers;
-
-      return {
-        id,
-        subject: getHeader(headers, 'subject'),
-        sender: getHeader(headers, 'from').replace(/<.*>/, '').trim(),
-        senderEmail: (getHeader(headers, 'from').match(/<(.+)>/) || [])[1] || '',
-        date: getHeader(headers, 'date'),
-        bodyText: decodeBody(payload),
-      };
-    }));
-
+    const newsletters = await collectNewsletters(gmail, { days, max, label: label || undefined, allowlist: allow });
     res.json({ newsletters, builtAt: new Date().toISOString() });
   } catch (err) {
     console.error(err);

@@ -32,6 +32,13 @@ export function getDisabledSources() {
   return JSON.parse(localStorage.getItem(KEYS.sourcesDisabled) || '[]');
 }
 
+// Detected senders minus the ones toggled off — the allowlist passed to the
+// server once the user has reviewed their sources. Empty until the first sync.
+export function getEnabledSourceEmails() {
+  const disabled = getDisabledSources();
+  return getSources().map(s => s.email).filter(email => !disabled.includes(email));
+}
+
 export function saveDisabledSources(disabled) {
   localStorage.setItem(KEYS.sourcesDisabled, JSON.stringify(disabled));
   dispatch('sources');

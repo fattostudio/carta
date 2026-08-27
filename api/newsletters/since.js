@@ -1,24 +1,50 @@
-import { verifyToken, getGmail, getHeader, decodeBody, setCors } from '../_helpers.js';
+import {
+  verifyToken, getGmail, getHeader, decodeBody, setCors,
+  buildNewsletterQuery, needsListHeaderFilter, hasListHeaders,
+  formatAfter,
+} from '../_helpers.js';
 
 export default async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   const tokens = verifyToken(req);
   if (!tokens) return res.status(401).json({ error: 'Not authenticated' });
-  const { since, label = 'Carta', max = 50 } = req.query;
-  let afterStr = '';
-  if (since) {
-    const d = new Date(since);
-    afterStr = `after:${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-  }
+
+  const { since, label, allowlist, max = 50 } = req.query;
+  const allow = allowlist ? allowlist.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const opts = { label: label || undefined, allowlist: allow, after: formatAfter(since) };
+  const q = buildNewsletterQuery(opts);
+  const filterByHeaders = needsListHeaderFilter(opts);
+  // The category scan is a wide net; pull extra candidates so that after the
+  // List-header winnowing we still have up to `max` real newsletters.
+  const listMax = filterByHeaders ? Math.min(Number(max) * 4, 200) : Number(max);
+
   try {
     const gmail = getGmail(tokens);
-    const searchRes = await gmail.users.messages.list({
-      userId: 'me', q: `label:${label}${afterStr ? ' ' + afterStr : ''}`, maxResults: Number(max),
-    });
-    const messages = searchRes.data.messages || [];
-    if (!messages.length) return res.json([]);
-    const newsletters = await Promise.all(messages.map(async ({ id }) => {
+    const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: listMax });
+    let candidates = searchRes.data.messages || [];
+    if (!candidates.length) return res.json([]);
+
+    // Pass 1 (auto-detect only): cheap metadata fetch to keep just the messages
+    // that carry list headers and land after `since`, capped at `max`.
+    if (filterByHeaders) {
+      const metas = await Promise.all(candidates.map(async ({ id }) => {
+        const m = await gmail.users.messages.get({
+          userId: 'me', id, format: 'metadata',
+          metadataHeaders: ['Date', 'List-Id', 'List-Unsubscribe', 'List-Post'],
+        });
+        return { id, headers: m.data.payload.headers };
+      }));
+      candidates = metas
+        .filter(m => hasListHeaders(m.headers))
+        .filter(m => !since || new Date(getHeader(m.headers, 'date')) > new Date(since))
+        .slice(0, Number(max))
+        .map(m => ({ id: m.id }));
+    }
+    if (!candidates.length) return res.json([]);
+
+    // Pass 2: full fetch for the survivors so we can extract the body.
+    const newsletters = await Promise.all(candidates.map(async ({ id }) => {
       const msg = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
       const { payload } = msg.data;
       const headers = payload.headers;

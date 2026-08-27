@@ -5,23 +5,23 @@ import { Btn } from '../components/ui';
 const STEPS = [
   {
     n: '01',
-    title: 'Create a Gmail label',
-    body: 'In Gmail, open Settings → Labels → "Create new label". Name it exactly "Carta". This is the inbox Carta reads from.',
+    title: 'Connect your Gmail',
+    body: 'Sign in with Google. Carta asks for read-only access — it can read messages, never send, delete, or change anything.',
   },
   {
     n: '02',
-    title: 'Create a filter',
-    body: 'Go to Settings → Filters and Blocked Addresses → "Create a new filter". Add the sender addresses of the newsletters you want (e.g. the "From" of each newsletter), separated by OR.',
+    title: 'Carta finds your newsletters',
+    body: 'No labels or filters to set up. Carta scans your inbox for bulk senders using Gmail categories and the list-unsubscribe signal that real newsletters carry.',
   },
   {
     n: '03',
-    title: 'Apply the label automatically',
-    body: 'On the next step of the filter, tick "Apply the label" and choose "Carta". Tick "Also apply to matching conversations" so existing newsletters get sorted too.',
+    title: 'Review your senders',
+    body: 'Open Sources to see every newsletter sender Carta detected. Toggle off anything that slipped through — receipts, alerts, promotions you do not read.',
   },
   {
     n: '04',
-    title: 'Connect & fetch',
-    body: 'Come back here, connect your Gmail, and Carta pulls everything in the Carta label into a designed weekly digest, ready to print.',
+    title: 'Get your weekly digest',
+    body: 'Carta pulls the newsletters from your kept senders into a designed weekly digest, updated daily and ready to print.',
   },
 ];
 
@@ -51,7 +51,7 @@ export default function Login() {
             fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--grey-mid)',
             letterSpacing: '0.06em', lineHeight: 1.7, marginBottom: 32,
           }}>
-            Connect your Gmail account to start building your weekly reading digest from your Carta label.
+            Connect your Gmail account and Carta builds a weekly reading digest from the newsletters in your inbox — no labels or filters to set up.
           </p>
           <Btn primary onClick={loginWithGoogle}>
             Login with Google
@@ -72,7 +72,7 @@ export default function Login() {
               fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--black)',
             }}>
-              First time? Set up Gmail
+              How it works
             </span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
               <path d="M6 9l6 6 6-6" />
@@ -114,7 +114,7 @@ export default function Login() {
                 borderTop: '1px solid var(--grey-rule)', paddingTop: 14, marginTop: 0,
               }}>
                 <a
-                  href="https://support.google.com/mail/answer/6579"
+                  href="https://support.google.com/mail/answer/3094499"
                   target="_blank"
                   rel="noreferrer"
                   style={{
@@ -122,7 +122,7 @@ export default function Login() {
                     letterSpacing: '0.06em', textDecoration: 'underline',
                   }}
                 >
-                  Gmail filters & labels help →
+                  About Gmail categories →
                 </a>
               </div>
             </div>

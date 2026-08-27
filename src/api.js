@@ -14,15 +14,22 @@ export async function logout() {
   window.location.reload();
 }
 
-export async function getSources(label = 'Carta') {
-  const res = await fetch(`${BASE}/sources?label=${label}`, { credentials: 'include' });
+// label: optional Gmail-label override. allowlist: array of sender emails to
+// restrict to. With neither, the server auto-detects newsletters from the inbox.
+export async function getSources({ label, allowlist } = {}) {
+  const params = new URLSearchParams();
+  if (label) params.set('label', label);
+  if (allowlist?.length) params.set('allowlist', allowlist.join(','));
+  const res = await fetch(`${BASE}/sources?${params}`, { credentials: 'include' });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-export async function fetchSince({ since, label = 'Carta', max = 50 } = {}) {
-  const params = new URLSearchParams({ label, max });
+export async function fetchSince({ since, label, allowlist, max = 50 } = {}) {
+  const params = new URLSearchParams({ max });
   if (since) params.append('since', since);
+  if (label) params.append('label', label);
+  if (allowlist?.length) params.append('allowlist', allowlist.join(','));
   const res = await fetch(`${BASE}/newsletters/since?${params}`, { credentials: 'include' });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
