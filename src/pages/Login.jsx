@@ -46,7 +46,19 @@ export default function Login() {
           }}>
             Newsletter digest
           </div>
-          <div style={{ borderTop: '2px solid var(--black)', marginBottom: 40 }} />
+          <div style={{ borderTop: '2px solid var(--black)', marginBottom: 24 }} />
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginBottom: 24 }}>
+            {['Connect', 'Review', 'Read'].map((s, i) => (
+              <span key={s} style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: i === 0 ? 'var(--black)' : 'var(--grey-light)',
+                fontWeight: i === 0 ? 700 : 400,
+              }}>
+                {String(i + 1).padStart(2, '0')} {s}
+              </span>
+            ))}
+          </div>
           <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--grey-mid)',
             letterSpacing: '0.06em', lineHeight: 1.7, marginBottom: 32,
@@ -81,7 +93,7 @@ export default function Login() {
 
           {open && (
             <div style={{ paddingBottom: 8 }}>
-              {STEPS.map((step, i) => (
+              {STEPS.map((step) => (
                 <div key={step.n} style={{
                   display: 'flex', gap: 14, padding: '14px 0',
                   borderTop: '1px solid var(--grey-rule)',

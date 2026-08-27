@@ -109,7 +109,8 @@ export default function Sidebar() {
 
       <div style={s.groupLabel}>Configure</div>
       <NavLink to="/sources"  style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
-        Sources <span style={s.badge}>4</span>
+        Sources
+        {sourceCount > 0 && <span style={s.badge}>{sourceCount}</span>}
       </NavLink>
       <NavLink to="/triggers" style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
         Triggers
