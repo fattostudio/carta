@@ -38,7 +38,7 @@ export default function Digests() {
     setError(null);
     setStatus(null);
     try {
-      const { added } = await incrementalFetch({ label: 'Carta' });
+      const { added } = await incrementalFetch();
       const d = getDigests();
       setDigests(d);
       if (d.length) setSelected(d[0].id);

@@ -6,7 +6,7 @@ import { getSources as fetchSources } from '../api';
 export default function Sources() {
   const [sources, setSources] = useState(getStoredSources);
   const [disabled, setDisabled] = useState(getDisabledSources);
-  const [label, setLabel] = useState('Carta');
+  const [label, setLabel] = useState('');
   const [autoFetch, setAutoFetch] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
@@ -25,7 +25,7 @@ export default function Sources() {
     setSyncing(true);
     setError(null);
     try {
-      const result = await fetchSources(label);
+      const result = await fetchSources({ label: label || undefined });
       setSources(result);
       saveSources(result);
     } catch (err) {
@@ -48,8 +48,8 @@ export default function Sources() {
     >
       <Section label="Gmail">
         <div style={{ marginBottom: 14 }}>
-          <FieldLabel>Label to watch</FieldLabel>
-          <Input value={label} onChange={e => setLabel(e.target.value)} />
+          <FieldLabel>Gmail label override (optional)</FieldLabel>
+          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Leave blank to auto-detect newsletters" />
         </div>
         <ToggleRow label="Auto-fetch on schedule" sub="Fetch when trigger conditions are met" on={autoFetch} onChange={setAutoFetch} last />
       </Section>
@@ -68,13 +68,13 @@ export default function Sources() {
 
         {sources.length === 0 && !syncing && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-light)', letterSpacing: '0.08em', padding: '8px 0' }}>
-            No sources yet — click Sync to scan your Carta label
+            No sources yet — click Sync to scan your inbox for newsletters
           </div>
         )}
 
         {syncing && (
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.08em', padding: '8px 0' }}>
-            Scanning Carta label...
+            Scanning inbox for newsletters...
           </div>
         )}
 

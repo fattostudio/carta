@@ -20,7 +20,7 @@ export default function Triggers() {
     setError(null);
     setStatus(null);
     try {
-      const { added } = await incrementalFetch({ label: 'Carta' });
+      const { added } = await incrementalFetch();
       setStatus(added > 0
         ? `${added} new newsletter${added !== 1 ? 's' : ''} added to this week's digest`
         : 'Already up to date — no new newsletters since last fetch'

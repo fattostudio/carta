@@ -1,20 +1,36 @@
-import { verifyToken, getGmail, getHeader, setCors } from './_helpers.js';
+import {
+  verifyToken, getGmail, getHeader, setCors,
+  buildNewsletterQuery, needsListHeaderFilter, hasListHeaders,
+  formatAfter, NEWSLETTER_HEADERS,
+} from './_helpers.js';
 
 export default async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   const tokens = verifyToken(req);
   if (!tokens) return res.status(401).json({ error: 'Not authenticated' });
-  const { label = 'Carta' } = req.query;
+
+  const { label, since, days = 90 } = req.query;
+  const opts = {
+    label: label || undefined,
+    after: formatAfter(since || Date.now() - Number(days) * 86400000),
+  };
+  const q = buildNewsletterQuery(opts);
+  const filterByHeaders = needsListHeaderFilter(opts);
+
   try {
     const gmail = getGmail(tokens);
-    const searchRes = await gmail.users.messages.list({ userId: 'me', q: `label:${label}`, maxResults: 500 });
+    const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: 500 });
     const messages = searchRes.data.messages || [];
     if (!messages.length) return res.json([]);
     const senderMap = new Map();
     await Promise.all(messages.map(async ({ id }) => {
-      const msg = await gmail.users.messages.get({ userId: 'me', id, format: 'metadata', metadataHeaders: ['From'] });
-      const from = getHeader(msg.data.payload.headers, 'from');
+      const msg = await gmail.users.messages.get({
+        userId: 'me', id, format: 'metadata', metadataHeaders: NEWSLETTER_HEADERS,
+      });
+      const headers = msg.data.payload.headers;
+      if (filterByHeaders && !hasListHeaders(headers)) return;
+      const from = getHeader(headers, 'from');
       if (!from) return;
       const nameMatch = from.match(/^"?([^"<]+?)"?\s*</);
       const emailMatch = from.match(/<(.+)>/) || [null, from.trim()];
