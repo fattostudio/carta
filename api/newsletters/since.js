@@ -1,7 +1,7 @@
 import {
   verifyToken, getGmail, getHeader, decodeBody, setCors,
   buildNewsletterQuery, needsListHeaderFilter, hasListHeaders,
-  formatAfter,
+  resolveLabel, formatAfter,
 } from '../_helpers.js';
 
 export default async function handler(req, res) {
@@ -12,15 +12,18 @@ export default async function handler(req, res) {
 
   const { since, label, allowlist, max = 50 } = req.query;
   const allow = allowlist ? allowlist.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const opts = { label: label || undefined, allowlist: allow, after: formatAfter(since) };
-  const q = buildNewsletterQuery(opts);
-  const filterByHeaders = needsListHeaderFilter(opts);
-  // The category scan is a wide net; pull extra candidates so that after the
-  // List-header winnowing we still have up to `max` real newsletters.
-  const listMax = filterByHeaders ? Math.min(Number(max) * 4, 200) : Number(max);
 
   try {
     const gmail = getGmail(tokens);
+    const opts = { label: label || undefined, allowlist: allow, after: formatAfter(since) };
+    // No allowlist and no override -> keep the Carta label if it exists, else auto-detect.
+    if (!opts.label && !allow.length) opts.label = (await resolveLabel(gmail)) || undefined;
+    const q = buildNewsletterQuery(opts);
+    const filterByHeaders = needsListHeaderFilter(opts);
+    // The category scan is a wide net; pull extra candidates so that after the
+    // List-header winnowing we still have up to `max` real newsletters.
+    const listMax = filterByHeaders ? Math.min(Number(max) * 4, 200) : Number(max);
+
     const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: listMax });
     let candidates = searchRes.data.messages || [];
     if (!candidates.length) return res.json([]);

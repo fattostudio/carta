@@ -127,13 +127,28 @@ function hasListHeaders(headers = []) {
   });
 }
 
+// Keep older Carta-label setups working: only auto-detect when that label is gone.
+async function resolveLabel(gmail, name = 'Carta') {
+  try {
+    const { data } = await gmail.users.labels.list({ userId: 'me' });
+    const hit = (data.labels || []).find(l => l.name.toLowerCase() === name.toLowerCase());
+    return hit ? hit.name : null;
+  } catch {
+    return null;
+  }
+}
+
 // Shared fetch used by /api/newsletters and /api/digest/build.
 async function collectNewsletters(gmail, { days, max, label, allowlist }) {
   const since = new Date();
   since.setDate(since.getDate() - Number(days));
   const afterStr = `${since.getFullYear()}/${since.getMonth() + 1}/${since.getDate()}`;
-  const auto = !label && !(allowlist && allowlist.length);
-  const q = buildNewsletterQuery({ afterStr, allowlist, label });
+  let effectiveLabel = label;
+  if (!effectiveLabel && !(allowlist && allowlist.length)) {
+    effectiveLabel = await resolveLabel(gmail);
+  }
+  const auto = !effectiveLabel && !(allowlist && allowlist.length);
+  const q = buildNewsletterQuery({ afterStr, allowlist, label: effectiveLabel });
   const listMax = auto ? Math.min(Number(max) * 4, 200) : Number(max);
 
   const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: listMax });

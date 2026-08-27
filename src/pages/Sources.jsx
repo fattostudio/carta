@@ -49,7 +49,7 @@ export default function Sources() {
       <Section label="Gmail">
         <div style={{ marginBottom: 14 }}>
           <FieldLabel>Gmail label override (optional)</FieldLabel>
-          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Leave blank to auto-detect newsletters" />
+          <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Blank: auto-detect (or your existing Carta label)" />
         </div>
         <ToggleRow label="Auto-fetch on schedule" sub="Fetch when trigger conditions are met" on={autoFetch} onChange={setAutoFetch} last />
       </Section>
