@@ -8,6 +8,7 @@ const KEYS = {
   template: 'carta-template',
   design: 'carta-design',
   triggers: 'carta-triggers',
+  onboarded: 'carta-onboarded',
 };
 
 export function getDigests() {
@@ -123,4 +124,22 @@ export function getLastFetch() {
 export function saveLastFetch(isoDate) {
   localStorage.setItem('carta-last-fetch', isoDate);
   dispatch('lastFetch');
+}
+
+// ── Onboarding ────────────────────────────────────────────────────────────────
+// Has this browser been through the first-run flow? Anyone who was already
+// using Carta before onboarding existed (has digests, detected senders, or a
+// past fetch) is grandfathered in so they never see it.
+export function isOnboarded() {
+  if (localStorage.getItem(KEYS.onboarded) === '1') return true;
+  if (getDigests().length || getSources().length || getLastFetch()) {
+    localStorage.setItem(KEYS.onboarded, '1');
+    return true;
+  }
+  return false;
+}
+
+export function markOnboarded() {
+  localStorage.setItem(KEYS.onboarded, '1');
+  dispatch('onboarded');
 }

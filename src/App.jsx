@@ -8,11 +8,14 @@ import Design from './pages/Design';
 import Digests from './pages/Digests';
 import DigestView from './pages/DigestView';
 import Login from './pages/Login';
+import Onboarding from './pages/Onboarding';
 import { getAuthStatus } from './api';
+import { isOnboarded } from './store';
 import { useMobile } from './hooks/useMobile';
 
 export default function App() {
   const [auth, setAuth] = useState(null);
+  const [onboarded, setOnboarded] = useState(isOnboarded);
   const isMobile = useMobile();
 
   useEffect(() => {
@@ -28,6 +31,8 @@ export default function App() {
   );
 
   if (!auth) return <Login />;
+
+  if (!onboarded) return <Onboarding onComplete={() => setOnboarded(true)} />;
 
   return (
     <BrowserRouter>
