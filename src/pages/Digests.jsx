@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageShell, Btn } from '../components/ui';
 import { getDigests, subscribe } from '../store';
 import { incrementalFetch } from '../hooks/useFetch';
+import { downloadDigestHtml } from '../lib/digestHtml';
 import { useMobile } from '../hooks/useMobile';
 
 export default function Digests() {
@@ -141,6 +142,7 @@ export default function Digests() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  <Btn onClick={() => downloadDigestHtml(active)}>Download</Btn>
                   <Btn onClick={() => navigate(`/digests/${active.id}`)}>View</Btn>
                   <Btn primary onClick={() => navigate(`/digests/${active.id}?print=1`)}>Print</Btn>
                 </div>

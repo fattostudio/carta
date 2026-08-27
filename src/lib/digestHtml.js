@@ -16,6 +16,19 @@ export function digestFilename(digest) {
   return `carta-${slug(digest?.week || 'digest')}.html`;
 }
 
+// Trigger a browser download of the digest as one standalone HTML file.
+export function downloadDigestHtml(digest) {
+  const blob = new Blob([buildDigestHtml(digest)], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = digestFilename(digest);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // Font stacks that hold up offline; the Google Fonts link is a nicety that
 // simply no-ops when there's no connection.
 const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@700;800&family=DM+Mono&display=swap';

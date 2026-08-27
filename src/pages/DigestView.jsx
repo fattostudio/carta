@@ -5,7 +5,7 @@ import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
 import { getDesign } from '../store';
 import { getParas, domainFromEmail, getTeaser } from '../lib/text';
-import { buildDigestHtml, digestFilename } from '../lib/digestHtml';
+import { downloadDigestHtml } from '../lib/digestHtml';
 
 // ── Templates ─────────────────────────────────────────────────────────────────
 const TEMPLATES = {
@@ -664,19 +664,6 @@ export default function DigestView() {
     else printPortrait();
   }
 
-  // Save the digest as one self-contained HTML file for offline reading.
-  function downloadDigest() {
-    const blob = new Blob([buildDigestHtml(digest)], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = digestFilename(digest);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-
   if (!digest) return (
     <div style={{ padding: 40, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--grey-mid)' }}>
       Digest not found. <button onClick={() => navigate('/digests')} style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Back</button>
@@ -711,7 +698,7 @@ export default function DigestView() {
             {t.name} · {design.printFormat}
           </div>
         )}
-        <Btn onClick={downloadDigest}>Download</Btn>
+        <Btn onClick={() => downloadDigestHtml(digest)}>Download</Btn>
         <Btn primary onClick={printDigest}>Print</Btn>
       </div>
 
