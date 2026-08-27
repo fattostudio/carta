@@ -1,7 +1,7 @@
 import {
   verifyToken, getGmail, getHeader, setCors,
   buildNewsletterQuery, needsListHeaderFilter, hasListHeaders,
-  formatAfter, NEWSLETTER_HEADERS,
+  resolveLabel, formatAfter, NEWSLETTER_HEADERS,
 } from './_helpers.js';
 
 export default async function handler(req, res) {
@@ -11,15 +11,16 @@ export default async function handler(req, res) {
   if (!tokens) return res.status(401).json({ error: 'Not authenticated' });
 
   const { label, since, days = 90 } = req.query;
-  const opts = {
-    label: label || undefined,
-    after: formatAfter(since || Date.now() - Number(days) * 86400000),
-  };
-  const q = buildNewsletterQuery(opts);
-  const filterByHeaders = needsListHeaderFilter(opts);
+  const after = formatAfter(since || Date.now() - Number(days) * 86400000);
 
   try {
     const gmail = getGmail(tokens);
+    const opts = { label: label || undefined, after };
+    // No override given -> use the Carta label if it exists, else auto-detect.
+    if (!opts.label) opts.label = (await resolveLabel(gmail)) || undefined;
+    const q = buildNewsletterQuery(opts);
+    const filterByHeaders = needsListHeaderFilter(opts);
+
     const searchRes = await gmail.users.messages.list({ userId: 'me', q, maxResults: 500 });
     const messages = searchRes.data.messages || [];
     if (!messages.length) return res.json([]);

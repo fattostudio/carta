@@ -115,6 +115,23 @@ export function hasListHeaders(headers = []) {
   });
 }
 
+// The label older setups relied on (a manual Gmail filter stamped it).
+export const DEFAULT_LABEL = 'Carta';
+
+// Non-breaking bridge: when the caller gives no allowlist and no explicit label,
+// keep using the user's existing Carta label if they still have one, and only
+// auto-detect for accounts that never set it up. Returns the real label name
+// (preserving its case) or null to mean "auto-detect".
+export async function resolveLabel(gmail, name = DEFAULT_LABEL) {
+  try {
+    const { data } = await gmail.users.labels.list({ userId: 'me' });
+    const hit = (data.labels || []).find(l => l.name.toLowerCase() === name.toLowerCase());
+    return hit ? hit.name : null;
+  } catch {
+    return null;
+  }
+}
+
 export function setCors(res) {
   const origin = getPublicBase();
   res.setHeader('Access-Control-Allow-Origin', origin);
