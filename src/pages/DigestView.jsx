@@ -44,12 +44,32 @@ function cleanBody(raw = '') {
 // slip through as full sentences — not article prose, so drop them.
 const CAPTION_RE = /\|\s*(REUTERS|AP Photo|AP\b|AFP|Getty Images|Getty|Bloomberg|Shutterstock)\b/i;
 
+// Safety net for truncated sources: an opening bracket/paren with no
+// matching close anywhere after it means whatever followed (a link, an
+// aside) got cut off and never arrived. Trim from that opener onward,
+// repeating in case removing one exposes another further back (e.g. an
+// unclosed "(" that only became dangling once the "[" inside it was cut).
+function stripDanglingOpeners(text) {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [open, close] of [['[', ']'], ['(', ')']]) {
+      const lastOpen = text.lastIndexOf(open);
+      if (lastOpen !== -1 && !text.includes(close, lastOpen)) {
+        text = text.slice(0, lastOpen).trimEnd();
+        changed = true;
+      }
+    }
+  }
+  return text;
+}
+
 function getParas(raw = '') {
   const cleaned = cleanBody(raw);
   let chunks = cleaned.split(/\n{2,}/);
   if (chunks.length < 3) chunks = cleaned.split(/\n/);
   return chunks
-    .map(p => p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
+    .map(p => stripDanglingOpeners(p.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()))
     .filter(p => p.length > 60 && !CAPTION_RE.test(p));
 }
 
