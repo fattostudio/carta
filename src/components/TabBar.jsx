@@ -17,7 +17,7 @@ export default function TabBar() {
       display: 'flex',
       zIndex: 200,
     }}>
-      {tabs.map(({ to, label, Icon }) => (
+      {tabs.map(({ to, label, Icon }, i) => (
         <NavLink
           key={to}
           to={to}
@@ -28,10 +28,10 @@ export default function TabBar() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: 3,
-            color: isActive ? 'var(--black)' : 'var(--grey-light)',
+            background: isActive ? 'var(--black)' : 'var(--white)',
+            color: isActive ? 'var(--white)' : 'var(--grey-mid)',
+            borderLeft: i === 0 ? 'none' : '1px solid var(--grey-rule)',
             textDecoration: 'none',
-            borderTop: isActive ? '2px solid var(--black)' : '2px solid transparent',
-            marginTop: -2,
           })}
         >
           <Icon size={20} />
