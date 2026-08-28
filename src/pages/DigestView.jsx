@@ -517,26 +517,31 @@ function ZinePortal({ digest, t }) {
   panels.push(<ZinePanelBlank key="ibc" pageNum="" />);
   panels.push(<ZinePanelBlank key="obc" pageNum="" isBackCover />);
 
+  // Baked-in safe margin. The full A4 spread is scaled down and centred on the
+  // page so a plain "100% / actual size" print clears any desktop printer's
+  // unprintable border — no "fit to printable area" fiddling. Front and back
+  // scale by the same factor about the page centre, so the fold stays centred
+  // and the two sides still register. Lower this if a printer still clips.
+  const SAFE_SCALE = 0.93;
+  const sheet = (key, left, right, isLast) => (
+    <div key={key} style={{
+      width: '297mm', height: '210mm',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+      breakAfter: isLast ? 'avoid' : 'page',
+      pageBreakAfter: isLast ? 'avoid' : 'always',
+    }}>
+      <div style={{ width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
+        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{left}</div>
+        <div style={{ overflow: 'hidden' }}>{right}</div>
+      </div>
+    </div>
+  );
+
   const N = panels.length;
   const sheets = [];
   for (let k = 1; k <= N / 4; k++) {
-    const fl = panels[N - 2 * k + 1];
-    const fr = panels[2 * k - 2];
-    const bl = panels[2 * k - 1];
-    const br = panels[N - 2 * k];
-    const last = k === N / 4;
-    sheets.push(
-      <div key={`${k}f`} style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: 'page', pageBreakAfter: 'always' }}>
-        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{fl}</div>
-        <div style={{ overflow: 'hidden' }}>{fr}</div>
-      </div>
-    );
-    sheets.push(
-      <div key={`${k}b`} style={{ width: '297mm', height: '210mm', display: 'flex', breakAfter: last ? 'avoid' : 'page', pageBreakAfter: last ? 'avoid' : 'always' }}>
-        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{bl}</div>
-        <div style={{ overflow: 'hidden' }}>{br}</div>
-      </div>
-    );
+    sheets.push(sheet(`${k}f`, panels[N - 2 * k + 1], panels[2 * k - 2], false));
+    sheets.push(sheet(`${k}b`, panels[2 * k - 1], panels[N - 2 * k], k === N / 4));
   }
 
   return createPortal(<div>{sheets}</div>, containerRef.current);
