@@ -125,8 +125,8 @@ export default function Digests() {
           {/* Detail */}
           {showDetail && active && (
             <div style={{ overflowY: 'auto' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, minWidth: 0 }}>
                   {isMobile && (
                     <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--black)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -135,13 +135,15 @@ export default function Digests() {
                     </button>
                   )}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.week}</div>
+                    <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: isMobile ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.week}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', marginTop: 3, letterSpacing: '0.06em' }}>
                       {active.newsletters.length} newsletters
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                {/* On mobile the header is a column, so these actions sit on their
+                    own row below the title — keeping the full digest title visible. */}
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <Btn onClick={() => downloadDigestHtml(active)}>Download</Btn>
                   <Btn onClick={() => navigate(`/digests/${active.id}`)}>View</Btn>
                   <Btn primary onClick={() => navigate(`/digests/${active.id}?print=1`)}>Print</Btn>
