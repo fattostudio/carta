@@ -468,6 +468,25 @@ function ZinePanelBlank({ pageNum, isBackCover }) {
   );
 }
 
+// Centre fold line + corner crop marks, drawn relative to the true 297×210mm
+// spread. Front and back sheets get identical marks, so folding/stapling along
+// the printed line registers the two sides even when the printer lands the whole
+// image off-centre on the sheet.
+function ZineTrimMarks() {
+  const hair = '0.4pt solid #9a9a9a';
+  const H = (s) => <div style={{ position: 'absolute', width: '5mm', borderTop: hair, ...s }} />;
+  const V = (s) => <div style={{ position: 'absolute', height: '5mm', borderLeft: hair, ...s }} />;
+  return (
+    <>
+      {H({ top: 0, left: '-7mm' })}   {V({ top: '-7mm', left: 0 })}
+      {H({ top: 0, right: '-7mm' })}  {V({ top: '-7mm', right: 0 })}
+      {H({ bottom: 0, left: '-7mm' })}  {V({ bottom: '-7mm', left: 0 })}
+      {H({ bottom: 0, right: '-7mm' })} {V({ bottom: '-7mm', right: 0 })}
+      <div style={{ position: 'absolute', top: '-9mm', bottom: '-9mm', left: '148.5mm', borderLeft: '0.4pt dashed #9a9a9a' }} />
+    </>
+  );
+}
+
 // ── Zine Portal — saddle-stitch imposition ────────────────────────────────────
 //    Sheet k front: [page N-2k+2 | page 2k-1]   (pages 1-indexed)
 //    Sheet k back:  [page 2k     | page N-2k+1]
@@ -538,9 +557,10 @@ function ZinePortal({ digest, t }) {
         transform: 'rotate(90deg) translateY(-210mm)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
-          <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{left}</div>
-          <div style={{ overflow: 'hidden' }}>{right}</div>
+        <div style={{ position: 'relative', width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
+          <div style={{ width: '148.5mm', overflow: 'hidden' }}>{left}</div>
+          <div style={{ width: '148.5mm', overflow: 'hidden' }}>{right}</div>
+          <ZineTrimMarks />
         </div>
       </div>
     </div>
