@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
+import { DigestsIcon, IntakeIcon, DesignIcon } from './icons';
 
 const tabs = [
-  { to: '/digests', label: 'Digests', icon: 'M4 5h16M4 12h16M4 19h10' },
-  { to: '/intake',  label: 'Intake',  icon: 'M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5' },
-  { to: '/design',  label: 'Design',  icon: 'M12 3v18M3 12h18' },
+  { to: '/digests', label: 'Digests', Icon: DigestsIcon },
+  { to: '/intake',  label: 'Intake',  Icon: IntakeIcon },
+  { to: '/design',  label: 'Design',  Icon: DesignIcon },
 ];
 
 export default function TabBar() {
@@ -16,10 +17,10 @@ export default function TabBar() {
       display: 'flex',
       zIndex: 200,
     }}>
-      {tabs.map(t => (
+      {tabs.map(({ to, label, Icon }) => (
         <NavLink
-          key={t.to}
-          to={t.to}
+          key={to}
+          to={to}
           style={({ isActive }) => ({
             flex: 1,
             display: 'flex',
@@ -33,11 +34,9 @@ export default function TabBar() {
             marginTop: -2,
           })}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d={t.icon} />
-          </svg>
+          <Icon size={20} />
           <span style={{ fontFamily: 'var(--font-sign)', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {t.label}
+            {label}
           </span>
         </NavLink>
       ))}
