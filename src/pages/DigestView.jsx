@@ -686,7 +686,9 @@ export default function DigestView() {
         }
         #carta-portrait-container, #carta-zine-container { display: none; }
         @media print {
+          html, body { margin: 0 !important; padding: 0 !important; }
           body > #root { display: none !important; }
+          #carta-portrait-container, #carta-zine-container { margin: 0 !important; padding: 0 !important; }
           body.carta-print-portrait #carta-portrait-container { display: block !important; }
           body.carta-print-zine     #carta-zine-container     { display: block !important; }
         }
