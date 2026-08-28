@@ -685,21 +685,25 @@ export default function DigestView() {
         }
       `}</style>
 
-      {/* Screen nav */}
-      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--white)', borderBottom: '2px solid var(--black)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={() => navigate(-1)} style={{ fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', background: 'none', border: 'none', color: 'var(--grey-mid)', cursor: 'pointer', flexShrink: 0 }}>
-          ← Back
-        </button>
-        <div style={{ flex: 1, fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {digest.week}
-        </div>
-        {!isMobile && (
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.08em', marginRight: 8 }}>
-            {t.name} · {design.printFormat}
+      {/* Screen nav — a column on mobile so the digest title keeps its full width */}
+      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--white)', borderBottom: '2px solid var(--black)', padding: '10px 16px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: isMobile ? 'none' : 1 }}>
+          <button onClick={() => navigate(-1)} style={{ fontFamily: 'var(--font-sign)', fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', background: 'none', border: 'none', color: 'var(--grey-mid)', cursor: 'pointer', flexShrink: 0 }}>
+            ← Back
+          </button>
+          <div style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sign)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: isMobile ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {digest.week}
           </div>
-        )}
-        <Btn onClick={() => downloadDigestHtml(digest)}>Download</Btn>
-        <Btn primary onClick={printDigest}>Print</Btn>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          {!isMobile && (
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.08em', marginRight: 4 }}>
+              {t.name} · {design.printFormat}
+            </div>
+          )}
+          <Btn onClick={() => downloadDigestHtml(digest)}>Download</Btn>
+          <Btn primary onClick={printDigest}>Print</Btn>
+        </div>
       </div>
 
       {/* Screen view — single column, responsive at every width */}
