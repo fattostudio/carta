@@ -507,13 +507,15 @@ function ZinePortal({ digest, t }) {
         pageNum={pageNum} />
     );
   });
-  do {
-    panels.push(<ZinePanelBlank key={`b${panels.length}`} pageNum="" />);
-  } while (panels.length % 4 !== 0);
-  // Last page in reading order = physical outside back cover
-  panels[panels.length - 1] = (
-    <ZinePanelBlank key={panels[panels.length - 1].key} pageNum="" isBackCover />
-  );
+  // The outermost (cover) sheet must be printed on one side only: its inner
+  // face — the inside front cover (page 2) and the inside back cover
+  // (page N-1) — stays blank. Page 2 is already a blank; pad the body so the
+  // two reserved trailing blanks land on a 4-page boundary, then append them.
+  while ((panels.length + 2) % 4 !== 0) {
+    panels.push(<ZinePanelBlank key={`pad${panels.length}`} pageNum="" />);
+  }
+  panels.push(<ZinePanelBlank key="ibc" pageNum="" />);
+  panels.push(<ZinePanelBlank key="obc" pageNum="" isBackCover />);
 
   const N = panels.length;
   const sheets = [];
