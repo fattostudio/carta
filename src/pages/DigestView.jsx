@@ -517,22 +517,30 @@ function ZinePortal({ digest, t }) {
   panels.push(<ZinePanelBlank key="ibc" pageNum="" />);
   panels.push(<ZinePanelBlank key="obc" pageNum="" isBackCover />);
 
-  // Baked-in safe margin. The full A4 spread is scaled down and centred on the
-  // page so a plain "100% / actual size" print clears any desktop printer's
-  // unprintable border — no "fit to printable area" fiddling. Front and back
-  // scale by the same factor about the page centre, so the fold stays centred
-  // and the two sides still register. Lower this if a printer still clips.
+  // Each sheet is a portrait A4 page box holding the landscape spread rotated
+  // 90°, so orientation no longer depends on the print dialog. SAFE_SCALE then
+  // shrinks the spread a touch and centres it, giving a margin that clears any
+  // desktop printer's unprintable border at a plain "100% / actual size" print.
+  // Front and back rotate + scale identically about the page centre, so the
+  // fold stays centred and the two sides register. Lower SAFE_SCALE if a
+  // printer still clips.
   const SAFE_SCALE = 0.93;
   const sheet = (key, left, right, isLast) => (
     <div key={key} style={{
-      width: '297mm', height: '210mm',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+      width: '210mm', height: '297mm', position: 'relative', overflow: 'hidden',
       breakAfter: isLast ? 'avoid' : 'page',
       pageBreakAfter: isLast ? 'avoid' : 'always',
     }}>
-      <div style={{ width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
-        <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{left}</div>
-        <div style={{ overflow: 'hidden' }}>{right}</div>
+      <div style={{
+        position: 'absolute', top: 0, left: 0, width: '297mm', height: '210mm',
+        transformOrigin: 'top left',
+        transform: 'rotate(90deg) translateY(-210mm)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
+          <div style={{ borderRight: '0.5pt dashed #ddd', overflow: 'hidden' }}>{left}</div>
+          <div style={{ overflow: 'hidden' }}>{right}</div>
+        </div>
       </div>
     </div>
   );
@@ -660,9 +668,13 @@ export default function DigestView() {
   }
 
   function printZine() {
+    // Portrait page box on purpose: the landscape spread is rotated 90° in CSS
+    // (see ZinePortal) so it prints correctly whatever the print dialog's
+    // orientation is set to — drivers that ignore `@page { size }` were laying
+    // the 297mm spread on a 210mm page and clipping the right-hand panel.
     printWithMode(
       'carta-print-zine',
-      `@page { size: 297mm 210mm; margin: 0; }`
+      `@page { size: 210mm 297mm; margin: 0; }`
     );
   }
 
