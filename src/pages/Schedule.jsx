@@ -42,7 +42,7 @@ export default function Schedule() {
 
   return (
     <PageShell title="Schedule" sub="How and when newsletters are fetched">
-      <Section label="Schedule">
+      <Section label="Auto-fetch">
         <ToggleRow
           label="Auto-fetch on app open"
           sub="Silently fetches new newsletters each time you open the app"
