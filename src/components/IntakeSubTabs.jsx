@@ -17,7 +17,7 @@ export default function IntakeSubTabs() {
       display: 'flex',
       zIndex: 190,
     }}>
-      {tabs.map(t => (
+      {tabs.map((t, i) => (
         <NavLink
           key={t.to}
           to={t.to}
@@ -28,9 +28,9 @@ export default function IntakeSubTabs() {
             alignItems: 'center',
             justifyContent: 'center',
             textDecoration: 'none',
-            color: isActive ? 'var(--black)' : 'var(--grey-light)',
-            borderTop: isActive ? '2px solid var(--black)' : '2px solid transparent',
-            marginTop: -2,
+            background: isActive ? 'var(--black)' : 'var(--white)',
+            color: isActive ? 'var(--white)' : 'var(--grey-mid)',
+            borderLeft: i === 0 ? 'none' : '1px solid var(--grey-rule)',
             fontFamily: 'var(--font-sign)', fontSize: 11, fontWeight: 700,
             letterSpacing: '0.1em', textTransform: 'uppercase',
           })}
