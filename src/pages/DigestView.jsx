@@ -517,30 +517,23 @@ function ZinePortal({ digest, t }) {
   panels.push(<ZinePanelBlank key="ibc" pageNum="" />);
   panels.push(<ZinePanelBlank key="obc" pageNum="" isBackCover />);
 
-  // Each sheet is a portrait A4 page box holding the landscape spread rotated
-  // 90°, so orientation no longer depends on the print dialog. The spread fills
-  // the page edge to edge at full size — print with the driver's A4 (Borderless)
-  // setting so it isn't clipped and lands centred. Front and back use the
-  // identical transform, so the fold guide registers between the two sides.
+  // Landscape A4 spread, drawn straight: two 148.5mm A5 panels side by side,
+  // full bleed, no rotation and no scaling. A CSS transform here gets baked into
+  // the PDF as a matrix that Preview.app renders off-centre (Acrobat handles it,
+  // Preview doesn't, and the print follows Preview). Drawn straight, every
+  // viewer and printer agrees. Print A4 landscape at 100% — or A4 Borderless so
+  // nothing is clipped. Front and back share this layout, so the centre fold
+  // guide registers between the two sides.
   const sheet = (key, left, right, isLast) => (
     <div key={key} style={{
-      width: '210mm', height: '297mm', position: 'relative', overflow: 'hidden',
+      width: '297mm', height: '210mm', position: 'relative', display: 'flex', overflow: 'hidden',
       breakAfter: isLast ? 'avoid' : 'page',
       pageBreakAfter: isLast ? 'avoid' : 'always',
     }}>
-      <div style={{
-        position: 'absolute', top: 0, left: 0, width: '297mm', height: '210mm',
-        transformOrigin: 'top left',
-        transform: 'rotate(90deg) translateY(-210mm)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{ position: 'relative', width: '297mm', height: '210mm', display: 'flex', flexShrink: 0 }}>
-          <div style={{ width: '148.5mm', overflow: 'hidden' }}>{left}</div>
-          <div style={{ width: '148.5mm', overflow: 'hidden' }}>{right}</div>
-          {/* fold guide at the true centre of the spread */}
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '148.5mm', borderLeft: '0.4pt dashed #b0b0b0' }} />
-        </div>
-      </div>
+      <div style={{ width: '148.5mm', overflow: 'hidden' }}>{left}</div>
+      <div style={{ width: '148.5mm', overflow: 'hidden' }}>{right}</div>
+      {/* fold guide at the true centre of the spread */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: '148.5mm', borderLeft: '0.4pt dashed #b0b0b0' }} />
     </div>
   );
 
@@ -667,13 +660,9 @@ export default function DigestView() {
   }
 
   function printZine() {
-    // Portrait page box on purpose: the landscape spread is rotated 90° in CSS
-    // (see ZinePortal) so it prints correctly whatever the print dialog's
-    // orientation is set to — drivers that ignore `@page { size }` were laying
-    // the 297mm spread on a 210mm page and clipping the right-hand panel.
     printWithMode(
       'carta-print-zine',
-      `@page { size: 210mm 297mm; margin: 0; }`
+      `@page { size: 297mm 210mm; margin: 0; }`
     );
   }
 
