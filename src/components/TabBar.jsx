@@ -1,10 +1,9 @@
 import { NavLink } from 'react-router-dom';
 
 const tabs = [
-  { to: '/digests',  label: 'Digests',  icon: 'M4 5h16M4 12h16M4 19h10' },
-  { to: '/sources',  label: 'Sources',  icon: 'M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5' },
-  { to: '/triggers', label: 'Triggers', icon: 'M12 8v4l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { to: '/design',   label: 'Design',   icon: 'M12 3v18M3 12h18' },
+  { to: '/digests', label: 'Digests', icon: 'M4 5h16M4 12h16M4 19h10' },
+  { to: '/intake',  label: 'Intake',  icon: 'M3 8l9 6 9-6M3 8v10h18V8M3 8l9-5 9 5' },
+  { to: '/design',  label: 'Design',  icon: 'M12 3v18M3 12h18' },
 ];
 
 export default function TabBar() {

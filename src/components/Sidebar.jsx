@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getDigests, getSources, subscribe } from '../store';
 
@@ -88,9 +88,23 @@ const activeStyle = {
   paddingLeft: '21px', // 16px base + 8px padding - 3px border = keeps text aligned
 };
 
+const sublink = {
+  ...s.link,
+  fontSize: 13,
+  fontWeight: 500,
+  paddingLeft: 32,
+};
+
+const sublinkActive = {
+  color: 'var(--black)',
+  borderLeft: '3px solid var(--black)',
+  paddingLeft: 29, // 32 base - 3px border
+};
+
 export default function Sidebar() {
   const [digestCount, setDigestCount] = useState(() => getDigests().length);
   const [sourceCount, setSourceCount] = useState(() => getSources().length);
+  const intakeActive = useLocation().pathname.startsWith('/intake');
 
   useEffect(() => subscribe(e => {
     if (e.detail.key === 'digests') setDigestCount(getDigests().length);
@@ -108,14 +122,24 @@ export default function Sidebar() {
       </NavLink>
 
       <div style={s.groupLabel}>Configure</div>
-      <NavLink to="/sources"  style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
-        Sources
-        {sourceCount > 0 && <span style={s.badge}>{sourceCount}</span>}
+      <NavLink to="/intake/sources" style={{ ...s.link, ...(intakeActive ? activeStyle : { paddingLeft: 16 }) }}>
+        <span>Intake</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: intakeActive ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', opacity: 0.5 }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
       </NavLink>
-      <NavLink to="/triggers" style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
-        Triggers
-      </NavLink>
-      <NavLink to="/design"   style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
+      {intakeActive && (
+        <>
+          <NavLink to="/intake/sources" end style={({ isActive }) => ({ ...sublink, ...(isActive ? sublinkActive : {}) })}>
+            Sources
+            {sourceCount > 0 && <span style={s.badge}>{sourceCount}</span>}
+          </NavLink>
+          <NavLink to="/intake/schedule" end style={({ isActive }) => ({ ...sublink, ...(isActive ? sublinkActive : {}) })}>
+            Schedule
+          </NavLink>
+        </>
+      )}
+      <NavLink to="/design" style={({ isActive }) => ({ ...s.link, ...(isActive ? activeStyle : { paddingLeft: 16 }) })}>
         Design
       </NavLink>
 

@@ -4,7 +4,7 @@ import { PageShell, Section, Row, ToggleRow, Btn } from '../components/ui';
 import { getLastFetch, getDigests } from '../store';
 import { incrementalFetch } from '../hooks/useFetch';
 
-export default function Triggers() {
+export default function Schedule() {
   const navigate = useNavigate();
   const [fetching, setFetching] = useState(false);
   const [status, setStatus] = useState(null);
@@ -41,7 +41,7 @@ export default function Triggers() {
   }
 
   return (
-    <PageShell title="Triggers" sub="How and when newsletters are fetched">
+    <PageShell title="Schedule" sub="How and when newsletters are fetched">
       <Section label="Schedule">
         <ToggleRow
           label="Auto-fetch on app open"

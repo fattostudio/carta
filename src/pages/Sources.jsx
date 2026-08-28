@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PageShell, Section, Row, ToggleRow, Toggle, Btn, FieldLabel, Input } from '../components/ui';
+import { PageShell, Section, Row, Toggle, Btn, FieldLabel, Input } from '../components/ui';
 import { getSources as getStoredSources, saveSources, getDisabledSources, saveDisabledSources } from '../store';
 import { getSources as fetchSources } from '../api';
 
@@ -7,7 +7,6 @@ export default function Sources() {
   const [sources, setSources] = useState(getStoredSources);
   const [disabled, setDisabled] = useState(getDisabledSources);
   const [label, setLabel] = useState('');
-  const [autoFetch, setAutoFetch] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,11 +46,10 @@ export default function Sources() {
       actions={<Btn primary confirm onClick={handleSave}>Save</Btn>}
     >
       <Section label="Gmail">
-        <div style={{ marginBottom: 14 }}>
+        <div>
           <FieldLabel>Gmail label override (optional)</FieldLabel>
           <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="Blank: auto-detect (or your existing Carta label)" />
         </div>
-        <ToggleRow label="Auto-fetch on schedule" sub="Fetch when trigger conditions are met" on={autoFetch} onChange={setAutoFetch} last />
       </Section>
 
       <Section

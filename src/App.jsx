@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import TabBar from './components/TabBar';
+import IntakeSubTabs from './components/IntakeSubTabs';
 import Sources from './pages/Sources';
-import Triggers from './pages/Triggers';
+import Schedule from './pages/Schedule';
 import Design from './pages/Design';
 import Digests from './pages/Digests';
 import DigestView from './pages/DigestView';
@@ -12,6 +13,37 @@ import Onboarding from './pages/Onboarding';
 import { getAuthStatus } from './api';
 import { isOnboarded } from './store';
 import { useMobile } from './hooks/useMobile';
+
+function Shell({ isMobile }) {
+  const onIntake = useLocation().pathname.startsWith('/intake');
+  return (
+    <div style={{ display: 'flex' }}>
+      {!isMobile && <Sidebar />}
+      <main style={{
+        marginLeft: isMobile ? 0 : 200,
+        flex: 1,
+        background: 'var(--white)',
+        minHeight: '100vh',
+        paddingBottom: isMobile ? (onIntake ? 104 : 60) : 0,
+      }}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/digests" replace />} />
+          <Route path="/digests"        element={<Digests />} />
+          <Route path="/digests/:id"    element={<DigestView />} />
+          <Route path="/intake"         element={<Navigate to="/intake/sources" replace />} />
+          <Route path="/intake/sources"  element={<Sources />} />
+          <Route path="/intake/schedule" element={<Schedule />} />
+          <Route path="/design"         element={<Design />} />
+          {/* Legacy paths from before Sources + Schedule were grouped under Intake */}
+          <Route path="/sources"  element={<Navigate to="/intake/sources" replace />} />
+          <Route path="/triggers" element={<Navigate to="/intake/schedule" replace />} />
+        </Routes>
+      </main>
+      {isMobile && onIntake && <IntakeSubTabs />}
+      {isMobile && <TabBar />}
+    </div>
+  );
+}
 
 export default function App() {
   const [auth, setAuth] = useState(null);
@@ -36,26 +68,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div style={{ display: 'flex' }}>
-        {!isMobile && <Sidebar />}
-        <main style={{
-          marginLeft: isMobile ? 0 : 200,
-          flex: 1,
-          background: 'var(--white)',
-          minHeight: '100vh',
-          paddingBottom: isMobile ? 60 : 0,
-        }}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/digests" replace />} />
-            <Route path="/digests"        element={<Digests />} />
-            <Route path="/digests/:id"    element={<DigestView />} />
-            <Route path="/sources"        element={<Sources />} />
-            <Route path="/triggers"       element={<Triggers />} />
-            <Route path="/design"         element={<Design />} />
-          </Routes>
-        </main>
-        {isMobile && <TabBar />}
-      </div>
+      <Shell isMobile={isMobile} />
     </BrowserRouter>
   );
 }
