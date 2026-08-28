@@ -1,42 +1,38 @@
-// Nav icons — solid, high-contrast marks in the CARTA masthead spirit.
-// Each renders a 24-grid <svg> with fill="currentColor" so the nav controls
-// its colour. Inner cut-outs use fillRule="evenodd".
+// Nav icons — line-art marks authored in /icons/*.svg, ported here so stroke
+// and fill follow `currentColor` (the nav sets the colour, incl. white when a
+// tab is selected). Geometry is 1:1 with the source files on a 32 grid.
+
+const STROKE = 1.6; // source files are drawn at 1; nudged up for 20px display
 
 export function DigestsIcon({ size = 20 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      {/* riffled booklet: a tilted cover with a page-window, three fanning leaves */}
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M4.5 9 16.5 4l2.5 8.5L7 16 4.5 9Zm2.1.6 8.8-3.6 1.6 5.2-8.6 2.2-1.8-3.8Z"
-      />
-      <path d="M7.8 15.6 20.5 13.4l.5 1.8L8.2 17.4l-.4-1.8Z" />
-      <path d="M7.5 16.6 20.6 16l.4 2L7.9 18.4l-.4-1.8Z" />
-      <path d="M7.3 17.5 19.6 19.3l.2 2.1L7.7 19.3l-.4-1.8Z" />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth={STROKE} strokeMiterlimit={10} aria-hidden="true">
+      <path fill="currentColor" stroke="none" d="M24.52,4.31v22.11H7.48V5.03l17.04-.72h0ZM25.52,3.26l-19.04.81v23.35h19.04V3.26h0Z" />
+      <polyline points="7.87 28.73 27.32 29.23 26.91 5.3" />
+      <line x1="13.14" y1="8.8" x2="22.04" y2="8.8" />
+      <line x1="13.14" y1="10.8" x2="19.03" y2="10.8" />
+      <polyline points="6.59 7.75 11.45 7.75 11.45 23.49 6.59 23.49" />
     </svg>
   );
 }
 
 export function IntakeIcon({ size = 20 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      {/* down arrow into a tray */}
-      <path d="M12 2.75a1 1 0 0 1 1 1V7.5h1.9a1 1 0 0 1 .74 1.67l-2.9 3.2a1 1 0 0 1-1.48 0l-2.9-3.2A1 1 0 0 1 9.1 7.5H11V3.75a1 1 0 0 1 1-1Z" />
-      <path d="M3 13.3h5.05a1 1 0 0 1 .92.6l.86 2.02a1 1 0 0 0 .92.6h4.5a1 1 0 0 0 .92-.6l.86-2.02a1 1 0 0 1 .92-.6H21v5.2A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5v-5.2Z" />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth={STROKE} strokeMiterlimit={10} aria-hidden="true">
+      <line x1="8.63" y1="10.07" x2="22.46" y2="8.8" />
+      <line x1="9.06" y1="14.27" x2="22.94" y2="14.86" />
+      <line x1="9.19" y1="20.74" x2="22.81" y2="18.02" />
+      <line x1="9.06" y1="23.43" x2="22.94" y2="23.43" />
+      <polyline points="6.48 16.14 6.48 26.87 25.52 26.87 25.52 16.05" />
     </svg>
   );
 }
 
 export function DesignIcon({ size = 20 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      {/* slab-serif A — a type specimen */}
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M10.4 3.5h3.2L18.1 17H21v3.5h-6.7v-3.2H16l-.95-3H8.95l-.95 3H9.7v3.2H3V17h2.9L10.4 3.5Zm1.6 4.7 1.6 5h-3.2l1.6-5Z"
-      />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth={STROKE} strokeMiterlimit={10} aria-hidden="true">
+      <line x1="5.54" y1="22.43" x2="25.52" y2="17.02" />
+      <polyline points="7.79 26.87 16 5.32 24.21 26.87" />
     </svg>
   );
 }
