@@ -519,12 +519,13 @@ function ZinePortal({ digest, t }) {
 
   // Each sheet is a portrait A4 page box holding the landscape spread rotated
   // 90°, so orientation no longer depends on the print dialog. SAFE_SCALE then
-  // shrinks the spread a touch and centres it, giving a margin that clears any
-  // desktop printer's unprintable border at a plain "100% / actual size" print.
-  // Front and back rotate + scale identically about the page centre, so the
-  // fold stays centred and the two sides register. Lower SAFE_SCALE if a
-  // printer still clips.
-  const SAFE_SCALE = 0.93;
+  // shrinks the spread and centres it, leaving a symmetric ~18mm margin — wide
+  // enough to clear a sheet-feed printer's trailing-edge dead zone (the Epson
+  // P800's is ~14mm) at a plain "100% / actual size" print. Front and back
+  // rotate + scale identically about the page centre, so the fold stays centred
+  // and the two sides register. If you feed from a straight/front path (small
+  // margins all round) you can raise this toward 0.95 for a bigger zine.
+  const SAFE_SCALE = 0.88;
   const sheet = (key, left, right, isLast) => (
     <div key={key} style={{
       width: '210mm', height: '297mm', position: 'relative', overflow: 'hidden',
