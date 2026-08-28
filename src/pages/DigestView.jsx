@@ -518,14 +518,10 @@ function ZinePortal({ digest, t }) {
   panels.push(<ZinePanelBlank key="obc" pageNum="" isBackCover />);
 
   // Each sheet is a portrait A4 page box holding the landscape spread rotated
-  // 90°, so orientation no longer depends on the print dialog. SAFE_SCALE then
-  // shrinks the spread and centres it, leaving a symmetric ~18mm margin — wide
-  // enough to clear a sheet-feed printer's trailing-edge dead zone (the Epson
-  // P800's is ~14mm) at a plain "100% / actual size" print. Front and back
-  // rotate + scale identically about the page centre, so the fold stays centred
-  // and the two sides register. If you feed from a straight/front path (small
-  // margins all round) you can raise this toward 0.95 for a bigger zine.
-  const SAFE_SCALE = 0.88;
+  // 90°, so orientation no longer depends on the print dialog. The spread fills
+  // the page edge to edge at full size — print with the driver's A4 (Borderless)
+  // setting so it isn't clipped and lands centred. Front and back use the
+  // identical transform, so the fold guide registers between the two sides.
   const sheet = (key, left, right, isLast) => (
     <div key={key} style={{
       width: '210mm', height: '297mm', position: 'relative', overflow: 'hidden',
@@ -538,10 +534,10 @@ function ZinePortal({ digest, t }) {
         transform: 'rotate(90deg) translateY(-210mm)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ position: 'relative', width: '297mm', height: '210mm', display: 'flex', flexShrink: 0, transform: `scale(${SAFE_SCALE})` }}>
+        <div style={{ position: 'relative', width: '297mm', height: '210mm', display: 'flex', flexShrink: 0 }}>
           <div style={{ width: '148.5mm', overflow: 'hidden' }}>{left}</div>
           <div style={{ width: '148.5mm', overflow: 'hidden' }}>{right}</div>
-          {/* fold guide only — stays inside the spread, so nothing extends past A4 */}
+          {/* fold guide at the true centre of the spread */}
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: '148.5mm', borderLeft: '0.4pt dashed #b0b0b0' }} />
         </div>
       </div>
