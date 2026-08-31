@@ -16,10 +16,11 @@ export async function logout() {
 
 // label: optional Gmail-label override. allowlist: array of sender emails to
 // restrict to. With neither, the server auto-detects newsletters from the inbox.
-export async function getSources({ label, allowlist } = {}) {
+export async function getSources({ label, allowlist, since } = {}) {
   const params = new URLSearchParams();
   if (label) params.set('label', label);
   if (allowlist?.length) params.set('allowlist', allowlist.join(','));
+  if (since) params.set('since', since);
   const res = await fetch(`${BASE}/sources?${params}`, { credentials: 'include' });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

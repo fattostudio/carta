@@ -40,11 +40,13 @@ export default function Digests() {
     setError(null);
     setStatus(null);
     try {
-      const { added } = await incrementalFetch();
+      const { added, newSenders } = await incrementalFetch();
       const d = getDigests();
       setDigests(d);
       if (d.length) setSelected(d[0].id);
-      setStatus(added > 0 ? `${added} new newsletter${added !== 1 ? 's' : ''} added` : 'Already up to date');
+      const parts = [added > 0 ? `${added} new newsletter${added !== 1 ? 's' : ''} added` : 'Already up to date'];
+      if (newSenders > 0) parts.push(`${newSenders} new sender${newSenders !== 1 ? 's' : ''} to review in Sources`);
+      setStatus(parts.join(' · '));
     } catch (err) {
       setError(err.message);
     } finally {

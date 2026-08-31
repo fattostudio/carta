@@ -5,6 +5,7 @@ const KEYS = {
   digests: 'carta-digests',
   sources: 'carta-sources',
   sourcesDisabled: 'carta-sources-disabled',
+  sourcesPending: 'carta-sources-pending',
   summaries: 'carta-summaries',
   template: 'carta-template',
   design: 'carta-design',
@@ -77,6 +78,61 @@ export function getEnabledSourceEmails() {
 
 export function saveDisabledSources(disabled) {
   localStorage.setItem(KEYS.sourcesDisabled, JSON.stringify(disabled));
+  dispatch('sources');
+}
+
+// ── Pending (newly detected) sources ────────────────────────────────────────
+// Once a reviewed allowlist exists, a fetch only pulls known senders. Each
+// fetch also runs a cheap auto-detect pass; any sender it turns up that isn't
+// reviewed or disabled lands here for the reader to add or ignore on Sources —
+// a newly-subscribed newsletter is surfaced, never folded into a digest
+// silently.
+export function getPendingSources() {
+  return JSON.parse(localStorage.getItem(KEYS.sourcesPending) || '[]');
+}
+
+// Fold a detection result into the pending list: skip anything already known or
+// explicitly disabled, union the rest, and keep a running issue count.
+export function mergePendingSources(detected = []) {
+  const known = new Set(getSources().map(s => s.email));
+  const disabled = new Set(getDisabledSources());
+  const byEmail = new Map(getPendingSources().map(s => [s.email, { ...s }]));
+
+  for (const d of detected) {
+    if (!d.email || known.has(d.email) || disabled.has(d.email)) continue;
+    const existing = byEmail.get(d.email);
+    if (existing) existing.count = (existing.count || 0) + (d.count || 0);
+    else byEmail.set(d.email, { name: d.name || d.email, email: d.email, count: d.count || 0 });
+  }
+
+  const next = [...byEmail.values()].sort((a, b) => (b.count || 0) - (a.count || 0));
+  localStorage.setItem(KEYS.sourcesPending, JSON.stringify(next));
+  dispatch('sources');
+  return next;
+}
+
+// Reader accepted a detected sender: into the reviewed list (enabled by
+// default, since the disabled list is opt-out) and out of pending.
+export function acceptPendingSource(email) {
+  const hit = getPendingSources().find(s => s.email === email);
+  if (!hit) return;
+  const sources = getSources();
+  if (!sources.some(s => s.email === email)) {
+    sources.push({ name: hit.name, email: hit.email, count: hit.count });
+    localStorage.setItem(KEYS.sources, JSON.stringify(sources));
+  }
+  localStorage.setItem(KEYS.sourcesPending, JSON.stringify(getPendingSources().filter(s => s.email !== email)));
+  dispatch('sources');
+}
+
+// Reader dismissed a detected sender: onto the disabled list so it isn't
+// flagged again, and out of pending.
+export function ignorePendingSource(email) {
+  const disabled = getDisabledSources();
+  if (!disabled.includes(email)) {
+    localStorage.setItem(KEYS.sourcesDisabled, JSON.stringify([...disabled, email]));
+  }
+  localStorage.setItem(KEYS.sourcesPending, JSON.stringify(getPendingSources().filter(s => s.email !== email)));
   dispatch('sources');
 }
 

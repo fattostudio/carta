@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getDigests, getSources, subscribe } from '../store';
+import { getDigests, getSources, getPendingSources, subscribe } from '../store';
 
 const s = {
   sidebar: {
@@ -59,6 +59,13 @@ const s = {
     fontSize: 10,
     color: 'var(--grey-light)',
   },
+  pendingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: 'var(--signal)',
+    flexShrink: 0,
+  },
   footer: {
     marginTop: 'auto',
     borderTop: '2px solid var(--black)',
@@ -104,11 +111,15 @@ const sublinkActive = {
 export default function Sidebar() {
   const [digestCount, setDigestCount] = useState(() => getDigests().length);
   const [sourceCount, setSourceCount] = useState(() => getSources().length);
+  const [pendingCount, setPendingCount] = useState(() => getPendingSources().length);
   const intakeActive = useLocation().pathname.startsWith('/intake');
 
   useEffect(() => subscribe(e => {
     if (e.detail.key === 'digests') setDigestCount(getDigests().length);
-    if (e.detail.key === 'sources') setSourceCount(getSources().length);
+    if (e.detail.key === 'sources') {
+      setSourceCount(getSources().length);
+      setPendingCount(getPendingSources().length);
+    }
   }), []);
 
   return (
@@ -124,15 +135,20 @@ export default function Sidebar() {
       <div style={s.groupLabel}>Configure</div>
       <NavLink to="/intake/sources" style={{ ...s.link, ...(intakeActive ? activeStyle : { paddingLeft: 16 }) }}>
         <span>Intake</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: intakeActive ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', opacity: 0.5 }}>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          {pendingCount > 0 && <span style={s.pendingDot} />}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: intakeActive ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', opacity: 0.5 }}>
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
       </NavLink>
       {intakeActive && (
         <>
           <NavLink to="/intake/sources" end style={({ isActive }) => ({ ...sublink, ...(isActive ? sublinkActive : {}) })}>
             Sources
-            {sourceCount > 0 && <span style={s.badge}>{sourceCount}</span>}
+            {pendingCount > 0
+              ? <span style={{ ...s.badge, color: 'var(--signal)' }}>{pendingCount} new</span>
+              : sourceCount > 0 && <span style={s.badge}>{sourceCount}</span>}
           </NavLink>
           <NavLink to="/intake/schedule" end style={({ isActive }) => ({ ...sublink, ...(isActive ? sublinkActive : {}) })}>
             Schedule

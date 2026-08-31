@@ -1,7 +1,7 @@
-import { fetchSince } from '../api';
+import { fetchSince, getSources as detectSenders } from '../api';
 import {
   getDigests, saveDigests,
-  getDisabledSources, getEnabledSourceEmails,
+  getDisabledSources, getEnabledSourceEmails, mergePendingSources,
   getWeekKey, weekLabel,
   getLastFetch, saveLastFetch,
 } from '../store';
@@ -13,14 +13,26 @@ export async function incrementalFetch({ label } = {}) {
   const allowlist = getEnabledSourceEmails();
   const newsletters = await fetchSince({ since, label, allowlist });
 
-  if (!newsletters.length) return { added: 0, weekKey: getWeekKey() };
+  // Against a reviewed allowlist the fetch above only sees known senders. Run a
+  // cheap auto-detect pass (metadata only, since the last fetch) so a
+  // newly-subscribed newsletter surfaces on Sources for review instead of being
+  // missed. Runs before the early returns — new mail may be *entirely* from
+  // unknown senders. Best-effort: never let it block a fetch.
+  let newSenders = 0;
+  if (allowlist.length && !label) {
+    try {
+      newSenders = mergePendingSources(await detectSenders({ since })).length;
+    } catch { /* ignore — detection is a nicety, not the job */ }
+  }
+
+  if (!newsletters.length) return { added: 0, weekKey: getWeekKey(), newSenders };
 
   const disabled = getDisabledSources();
   const filtered = disabled.length
     ? newsletters.filter(nl => !disabled.includes(nl.senderEmail))
     : newsletters;
 
-  if (!filtered.length) return { added: 0, weekKey: getWeekKey() };
+  if (!filtered.length) return { added: 0, weekKey: getWeekKey(), newSenders };
 
   const byWeek = {};
   for (const nl of filtered) {
@@ -61,5 +73,5 @@ export async function incrementalFetch({ label } = {}) {
   );
   saveLastFetch(latest.date);
 
-  return { added: totalAdded, weekKey: getWeekKey() };
+  return { added: totalAdded, weekKey: getWeekKey(), newSenders };
 }
