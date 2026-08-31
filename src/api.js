@@ -34,3 +34,17 @@ export async function fetchSince({ since, label, allowlist, max = 50 } = {}) {
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+
+// items: [{ id, subject, sender, bodyText }]. Returns { summaries: { [id]: string } }.
+// Call with a bounded slice (the curation view chunks by ~24) so each request
+// stays well under the function timeout.
+export async function summarize(items) {
+  const res = await fetch(`${BASE}/summarize`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell, Btn } from '../components/ui';
-import { getDigests, subscribe } from '../store';
+import { getDigests, subscribe, includedNewsletters } from '../store';
 import { incrementalFetch } from '../hooks/useFetch';
 import { downloadDigestHtml } from '../lib/digestHtml';
 import { useMobile } from '../hooks/useMobile';
+import DigestCuration from '../components/DigestCuration';
 
 export default function Digests() {
   const [digests, setDigests] = useState(getDigests);
@@ -58,6 +59,8 @@ export default function Digests() {
   }
 
   const active = digests.find(d => d.id === selected);
+  const activeIncluded = active ? includedNewsletters(active) : [];
+  const nothingSelected = active && activeIncluded.length === 0;
 
   // On mobile, show either the list OR the detail, not both
   const showList = !isMobile || mobileView === 'list';
@@ -137,34 +140,22 @@ export default function Digests() {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--font-sign)', fontSize: 18, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', whiteSpace: isMobile ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.week}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', marginTop: 3, letterSpacing: '0.06em' }}>
-                      {active.newsletters.length} newsletters
+                      {activeIncluded.length === active.newsletters.length
+                        ? `${active.newsletters.length} newsletters`
+                        : `${activeIncluded.length} of ${active.newsletters.length} newsletters`}
                     </div>
                   </div>
                 </div>
                 {/* On mobile the header is a column, so these actions sit on their
                     own row below the title — keeping the full digest title visible. */}
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <Btn onClick={() => downloadDigestHtml(active)}>Download</Btn>
-                  <Btn onClick={() => navigate(`/digests/${active.id}`)}>View</Btn>
-                  <Btn primary onClick={() => navigate(`/digests/${active.id}?print=1`)}>Print</Btn>
+                  <Btn disabled={nothingSelected} onClick={() => downloadDigestHtml({ ...active, newsletters: activeIncluded })}>Download</Btn>
+                  <Btn disabled={nothingSelected} onClick={() => navigate(`/digests/${active.id}`)}>View</Btn>
+                  <Btn primary disabled={nothingSelected} onClick={() => navigate(`/digests/${active.id}?print=1`)}>Print</Btn>
                 </div>
               </div>
 
-              {active.newsletters.map((nl, i) => (
-                <div key={nl.id || i} style={{ padding: '14px 20px', borderBottom: '1px solid var(--grey-rule)', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-light)', minWidth: 20, paddingTop: 2 }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'var(--font-sign)', fontSize: 15, fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', lineHeight: 1.2, marginBottom: 4 }}>
-                      {nl.subject}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.06em' }}>
-                      {nl.sender} · {nl.date ? new Date(nl.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <DigestCuration digest={active} />
             </div>
           )}
         </div>

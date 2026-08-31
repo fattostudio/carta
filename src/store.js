@@ -5,6 +5,7 @@ const KEYS = {
   digests: 'carta-digests',
   sources: 'carta-sources',
   sourcesDisabled: 'carta-sources-disabled',
+  summaries: 'carta-summaries',
   template: 'carta-template',
   design: 'carta-design',
   triggers: 'carta-triggers',
@@ -18,6 +19,40 @@ export function getDigests() {
 export function saveDigests(digests) {
   localStorage.setItem(KEYS.digests, JSON.stringify(digests));
   dispatch('digests');
+}
+
+// ── Digest curation ──────────────────────────────────────────────────────────
+// A digest carries `excludedIds` — newsletter ids the reader has toggled off in
+// the pre-read curation step. Every surface that renders a digest (the reader,
+// the print portals, the offline HTML) reads through `includedNewsletters` so
+// the exclusions apply everywhere without touching the stored newsletter list.
+export function includedNewsletters(digest) {
+  if (!digest) return [];
+  const excluded = new Set(digest.excludedIds || []);
+  return digest.newsletters.filter(nl => !excluded.has(nl.id));
+}
+
+export function setDigestExclusions(digestId, excludedIds) {
+  const digests = getDigests();
+  const digest = digests.find(d => String(d.id) === String(digestId));
+  if (!digest) return;
+  digest.excludedIds = excludedIds;
+  saveDigests(digests);
+}
+
+// ── Newsletter summaries ─────────────────────────────────────────────────────
+// One-sentence blurbs keyed by newsletter id (the Gmail message id, stable
+// across digests) so a given issue is only ever summarised — and paid for —
+// once, however many digests it lands in.
+export function getSummaries() {
+  return JSON.parse(localStorage.getItem(KEYS.summaries) || '{}');
+}
+
+export function mergeSummaries(partial) {
+  const next = { ...getSummaries(), ...partial };
+  localStorage.setItem(KEYS.summaries, JSON.stringify(next));
+  dispatch('summaries');
+  return next;
 }
 
 export function getSources() {

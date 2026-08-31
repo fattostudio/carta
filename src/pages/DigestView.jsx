@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Btn } from '../components/ui';
 import { useMobile } from '../hooks/useMobile';
-import { getDesign } from '../store';
+import { getDesign, includedNewsletters } from '../store';
 import { getParas, domainFromEmail, getTeaser } from '../lib/text';
 import { downloadDigestHtml } from '../lib/digestHtml';
 
@@ -623,7 +623,10 @@ export default function DigestView() {
 
   const [searchParams] = useSearchParams();
   const digests = JSON.parse(localStorage.getItem('carta-digests') || '[]');
-  const digest = digests.find(d => String(d.id) === id);
+  const rawDigest = digests.find(d => String(d.id) === id);
+  // Read through the curation exclusions so the reader, both print portals and
+  // the offline HTML all render only the issues the reader kept.
+  const digest = rawDigest && { ...rawDigest, newsletters: includedNewsletters(rawDigest) };
 
   useEffect(() => {
     if (searchParams.get('print') === '1') {

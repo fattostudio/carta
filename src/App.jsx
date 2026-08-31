@@ -53,7 +53,11 @@ export default function App() {
   useEffect(() => {
     getAuthStatus()
       .then(({ authenticated }) => setAuth(authenticated))
-      .catch(() => setAuth(false));
+      // No API runs under `vite dev`, so /api/auth/* always fails locally. When
+      // developing, `localStorage.carta-dev-bypass = '1'` lets you through to the
+      // gated pages. `import.meta.env.DEV` is false in any production build, so
+      // this can never open the gate on the deployed site.
+      .catch(() => setAuth(import.meta.env.DEV && localStorage.getItem('carta-dev-bypass') === '1'));
   }, []);
 
   if (auth === null) return (

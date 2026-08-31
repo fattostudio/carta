@@ -10,11 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
+    "googleapis": "^140.0.0",
+    "jsonwebtoken": "^9.0.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.16.0",
-    "jsonwebtoken": "^9.0.2",
-    "googleapis": "^140.0.0"
+    "react-router-dom": "^7.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
