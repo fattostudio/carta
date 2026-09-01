@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageShell, Section, Row, ToggleRow, Btn } from '../components/ui';
-import { getLastFetch, getDigests } from '../store';
+import { PageShell, Section, Row, ToggleRow, Btn, Select, FieldLabel } from '../components/ui';
+import { getLastFetch, getDigests, getWeekStartDay, saveWeekStartDay } from '../store';
 import { incrementalFetch } from '../hooks/useFetch';
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -10,6 +12,13 @@ export default function Schedule() {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
   const [autoFetch, setAutoFetch] = useState(true);
+  const [weekStart, setWeekStart] = useState(getWeekStartDay);
+
+  function handleWeekStart(e) {
+    const day = Number(e.target.value);
+    setWeekStart(day);
+    saveWeekStartDay(day); // re-files existing digests on the new boundary
+  }
 
   const lastFetch = getLastFetch();
   const digests = getDigests();
@@ -50,6 +59,25 @@ export default function Schedule() {
           onChange={setAutoFetch}
           last
         />
+      </Section>
+
+      <Section label="Digest week">
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.06em', lineHeight: 1.7, marginBottom: 16 }}>
+          Newsletters are grouped into a weekly digest starting on this day. Set it to the day you print, so issues that arrive afterwards roll into the next week's digest instead of one you've already printed. Changing this re-files your existing digests.
+        </div>
+        <Row last>
+          <div>
+            <FieldLabel>Week starts on</FieldLabel>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--grey-mid)', letterSpacing: '0.04em' }}>
+              {DAYS[weekStart]} to {DAYS[(weekStart + 6) % 7]}
+            </div>
+          </div>
+          <div style={{ width: 150 }}>
+            <Select value={weekStart} onChange={handleWeekStart}>
+              {DAYS.map((d, i) => <option key={i} value={i}>{d}</option>)}
+            </Select>
+          </div>
+        </Row>
       </Section>
 
       <Section label="Manual Fetch">

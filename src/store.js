@@ -11,6 +11,8 @@ const KEYS = {
   design: 'carta-design',
   triggers: 'carta-triggers',
   onboarded: 'carta-onboarded',
+  weekStart: 'carta-week-start',
+  digestsVersion: 'carta-digests-version',
 };
 
 export function getDigests() {
@@ -189,24 +191,98 @@ export function subscribe(fn) {
 }
 
 // ── Week utilities ─────────────────────────────────────────────────────────────
-export function getWeekKey(date = new Date()) {
+// Which weekday a digest week begins on (0 = Sunday … 6 = Saturday). Default
+// Saturday: weeks run Sat → Fri, so a digest you print Friday afternoon holds
+// the whole week and newsletters that land over the weekend roll into next
+// week's edition rather than one you've already printed.
+export function getWeekStartDay() {
+  const v = parseInt(localStorage.getItem(KEYS.weekStart), 10);
+  return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 6;
+}
+
+export function saveWeekStartDay(day) {
+  localStorage.setItem(KEYS.weekStart, String(day));
+  rebucketDigests(); // re-file existing issues on the new boundary
+  dispatch('digests');
+  dispatch('weekStart');
+}
+
+// Midnight on the week-start day on or before `date`.
+export function getWeekStart(date = new Date(), startDay = getWeekStartDay()) {
   const d = new Date(date);
-  const day = d.getDay() || 7;
-  d.setDate(d.getDate() + 1 - day);
-  const year = d.getFullYear();
-  const startOfYear = new Date(year, 0, 1);
-  const weekNum = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-  return `${year}-W${String(weekNum).padStart(2, '0')}`;
+  d.setHours(0, 0, 0, 0);
+  const back = (d.getDay() - startDay + 7) % 7;
+  d.setDate(d.getDate() - back);
+  return d;
+}
+
+// The week key is the start date itself (YYYY-MM-DD) — sorts chronologically as
+// a plain string and needs no year-boundary special-casing.
+export function getWeekKey(date = new Date()) {
+  const s = getWeekStart(date);
+  return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`;
 }
 
 export function weekLabel(weekKey) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) {
+    const [y, m, d] = weekKey.split('-').map(Number);
+    return `Week of ${new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+  }
+  // Legacy YYYY-Www keys (pre week-start migration).
   const [year, w] = weekKey.split('-W');
-  const weekNum = parseInt(w);
   const jan1 = new Date(parseInt(year), 0, 1);
   const monday = new Date(jan1);
-  monday.setDate(jan1.getDate() + (weekNum - 1) * 7 - (jan1.getDay() || 7) + 1);
+  monday.setDate(jan1.getDate() + (parseInt(w) - 1) * 7 - (jan1.getDay() || 7) + 1);
   return `Week of ${monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
 }
+
+// Re-file every stored newsletter into digests keyed by the current week-start
+// boundary. Runs on the one-time key migration and whenever the start day
+// changes. Merges issues that now share a week, dedupes by newsletter id, and
+// carries each issue's curation (excludedIds) across.
+export function rebucketDigests() {
+  const digests = getDigests();
+  if (!digests.length) return;
+
+  const excluded = new Set(digests.flatMap(d => d.excludedIds || []));
+  const seen = new Set();
+  const byWeek = {};
+
+  for (const d of digests) {
+    for (const nl of d.newsletters || []) {
+      if (!nl || seen.has(nl.id)) continue;
+      seen.add(nl.id);
+      const wk = getWeekKey(new Date(nl.date || d.builtAt || Date.now()));
+      (byWeek[wk] || (byWeek[wk] = [])).push(nl);
+    }
+  }
+
+  const next = Object.entries(byWeek).map(([wk, nls]) => ({
+    id: wk,
+    weekKey: wk,
+    week: weekLabel(wk),
+    builtAt: new Date().toISOString(),
+    newsletters: nls.sort((a, b) => new Date(b.date) - new Date(a.date)),
+    excludedIds: nls.filter(nl => excluded.has(nl.id)).map(nl => nl.id),
+  }));
+
+  next.sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+  localStorage.setItem(KEYS.digests, JSON.stringify(next));
+}
+
+// One-time: digests built before the configurable week start were keyed by ISO
+// week number (YYYY-Www) on a Monday boundary. Re-file them once.
+export function migrateDigests() {
+  try {
+    if (localStorage.getItem(KEYS.digestsVersion) === '2') return;
+    const digests = JSON.parse(localStorage.getItem(KEYS.digests) || '[]');
+    if (digests.some(d => typeof d.weekKey === 'string' && d.weekKey.includes('-W'))) {
+      rebucketDigests();
+    }
+    localStorage.setItem(KEYS.digestsVersion, '2');
+  } catch { /* leave stored data untouched on any parse error */ }
+}
+migrateDigests();
 
 export function getLastFetch() {
   return localStorage.getItem('carta-last-fetch') || null;
